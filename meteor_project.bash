@@ -19,7 +19,7 @@ put the home page content here
 MAIN="<template name=\"main\">
 {{> header}}
 
-{{> index}}
+{{> yield}}
 
 {{> footer}}
 </template>"
