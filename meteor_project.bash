@@ -47,17 +47,17 @@ Router.map(function () {
 
 });"
 
-SUBSCRIPTIONS="//Meteor.subscribe('some_collection');"
+SUBSCRIPTIONS="//Meteor.subscribe('a_collection');"
 
 METHODS="//Meteor.methods({
 //
 //});"
 
-PUBLICATIONS="//Meteor.publish('some_collection', function(){
-//    return 'some_collection'.find();
+PUBLICATIONS="//Meteor.publish('a_collection', function(){
+//    return 'a_collection'.find();
 //});"
 
-FIXTURES="//if (some_collection.find().count() === 0) {
+FIXTURES="//if (a_collection.find().count() === 0) {
 //
 //}"
 #
