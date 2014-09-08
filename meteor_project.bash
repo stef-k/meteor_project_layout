@@ -15,20 +15,25 @@ fi
 ROOT_DIRECTORIES="client server lib collections public tests"
 CLIENT_DIRECTORIES="lib stylesheets views"
 # files
-CLIENT_STYLESHEETS="stylesheets/style.css"
+CLIENT_STYLESHEETS="stylesheets/style.css stylesheets/sticky_footer.css"
 # TEMPLATES
 # index.html template
 INDEX="<template name=\"index\">
-put the home page content here
+        <!--bootstrap container class delete otherwise-->
+        <div class=\"container\">
+            main content
+        </div>
 </template>"
 
 # main.html (iron router layout)
 MAIN="<template name=\"main\">
-{{> header}}
+    <body>
+    {{> header}}
 
-{{> yield}}
+    {{> yield}}
 
-{{> footer}}
+    {{> footer}}
+    </body>
 </template>"
 
 # head
@@ -38,12 +43,81 @@ HEAD="<head>
 
 # header.html
 HEADER="<template name=\"header\">
-nav - header related content
+    <!--bootstrap related classes delete otherwise-->
+    <div class=\"navbar navbar-default navbar-fixed-top\" role=\"navigation\">
+        <div class=\"container\">
+            <div class=\"navbar-header\">
+                <button type=\"button\" class=\"navbar-toggle collapsed\" data-toggle=\"collapse\" data-target=\".navbar-collapse\">
+                    <span class=\"sr-only\">Toggle navigation</span>
+                    <span class=\"icon-bar\"></span>
+                    <span class=\"icon-bar\"></span>
+                    <span class=\"icon-bar\"></span>
+                </button>
+                <a class=\"navbar-brand\" >${PROJECT_NAME}</a>
+            </div>
+            <div class=\"collapse navbar-collapse\">
+                <ul class=\"nav navbar-nav\">
+                    <li class=\"active\"><a href=\"{{pathFor 'index'}}\">Home</a></li>
+                    <li><a href=\"#about\">About</a></li>
+                    <!--{{> loginButtons}} if accounts-password meteor package is used-->
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
 </template>"
 
 FOOTER="<template name=\"footer\">
-footer content
+    <!--bootstrap footer classes delete otherwise-->
+    <div class=\"footer\">
+        <div class=\"container\">
+            <p class=\"text-muted\">Place sticky footer content here.</p>
+        </div>
+    </div>
 </template>"
+
+STICKY="
+/* Sticky footer styles
+this file is used with Bootstrap 3 for the known sticky footer.
+You can delete the file if Bootstrap 3 is not used or you do not want
+a sticky footer.
+-------------------------------------------------- */
+html {
+    position: relative;
+    min-height: 100%;
+}
+body {
+    /* Margin bottom by footer height */
+    margin-bottom: 60px;
+}
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* Set the fixed height of the footer here */
+    height: 60px;
+    background-color: #f5f5f5;
+}
+
+
+/* Custom page CSS
+-------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+
+body > .container {
+    padding: 60px 15px 0;
+}
+.container .text-muted {
+    margin: 20px 0;
+}
+
+.footer > .container {
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+code {
+    font-size: 80%;
+}"
 
 # additional .gitignore currently contains .idea directory
 GIT_IGNORE=".idea"
@@ -111,6 +185,7 @@ echo "${HEAD}" > "views/head.html"
 
 # client files
 touch ${CLIENT_STYLESHEETS}
+echo "${STICKY}" > "stylesheets/sticky_footer.css"
 echo "${SUBSCRIPTIONS}" > "lib/subscriptions.js"
 touch "views/main.js"
 
