@@ -5,6 +5,13 @@
 # VARIABLES
 # main dirs
 PROJECT_NAME="project_name"
+#
+# check if project name is given
+if [ -z "$1" ]; then
+    echo "Project name not given, will assign project_name"
+else
+    PROJECT_NAME=$1
+fi
 ROOT_DIRECTORIES="client server lib collections public tests"
 CLIENT_DIRECTORIES="lib stylesheets views"
 # files
@@ -24,6 +31,12 @@ MAIN="<template name=\"main\">
 {{> footer}}
 </template>"
 
+# head
+HEAD="<head>
+    <title>${PROJECT_NAME}</title>
+</head>"
+
+# header.html
 HEADER="<template name=\"header\">
 nav - header related content
 </template>"
@@ -60,13 +73,6 @@ PUBLICATIONS="//Meteor.publish('a_collection', function(){
 FIXTURES="//if (a_collection.find().count() === 0) {
 //
 //}"
-#
-# check if project name is given
-if [ -z "$1" ]; then
-    echo "Project name not given, will assign project_name"
-else
-    PROJECT_NAME=$1
-fi
 
 # create project
 meteor create "${PROJECT_NAME}"
@@ -101,6 +107,7 @@ echo "${INDEX}" > "views/index.html"
 echo "${MAIN}" > "views/main.html"
 echo "${HEADER}" > "views/header.html"
 echo "${FOOTER}" > "views/footer.html"
+echo "${HEAD}" > "views/head.html"
 
 # client files
 touch ${CLIENT_STYLESHEETS}
