@@ -36,7 +36,7 @@ footer content
 GIT_IGNORE=".idea"
 # router.js basic contents
 ROUTER="Router.configure({
-  layoutTemplate: 'main',
+  layoutTemplate: 'main'
 });
 
 Router.map(function () {
