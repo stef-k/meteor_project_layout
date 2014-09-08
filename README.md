@@ -3,7 +3,7 @@
 ### Usage:
 
 1. Place the script in your $PATH
-2. Make it executable with chmod +x meteor_project.bash
+2. Make it executable with `chmod +x meteor_project.bash`
 3. Create a new project:
 
 ```bash
