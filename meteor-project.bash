@@ -250,7 +250,7 @@ function create_client_files
     done
 
     echo "${STICKY_FOOTBAR}" > "client/stylesheets/sticky_footer.css"
-    echo "${SUBSCRIPTIONS}" > "lib/subscriptions.js"
+    echo "${SUBSCRIPTIONS}" > "client/lib/subscriptions.js"
     echo "${MAIN_HELPER}" > "client/views/layout/main.js"
 }
 
