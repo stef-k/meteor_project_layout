@@ -19,20 +19,23 @@ where PROJECT_NAME type the name of your project.
 The script creates a meteor project with layout as bellow and inserts skeleton code in some files (see the script):
 
 ```
-project_name/
+new_meteor_project/
 ├── client
-│   ├── lib
+│   ├── lib // client side libraries - utilities - configurations
 │   │   └── subscriptions.js
 │   ├── stylesheets
+│   │   ├── sticky_footer.css
 │   │   └── style.css
 │   └── views
-│       ├── footer.html
-│       ├── header.html
 │       ├── index.html
-│       ├── main.html
-│       └── main.js
+│       └── layout // layout templates combined all in the main.html template
+│           ├── footer.html
+│           ├── header.html
+│           ├── head.html
+│           ├── main.html
+│           └── main.js
 ├── collections
-├── lib
+├── lib // client and server side libraries - utilities - configurations
 │   └── router.js
 ├── public
 ├── server
@@ -41,7 +44,7 @@ project_name/
 │   └── publications.js
 └── tests
 
-9 directories, 11 files
+10 directories, 13 files
 
 ```
 
