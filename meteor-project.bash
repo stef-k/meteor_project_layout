@@ -2,6 +2,29 @@
 # Structured Meteor projects
 # Version: 0.2
 #
+## Variables, Files - Directories
+# Default project name
+# check if project name is given
+if [ -z "$1" ]; then
+    echo "Project name not given, will assign project_name"
+    PROJECT_NAME="new_meteor_project"
+else
+    PROJECT_NAME=$1
+fi
+ROOT_DIRECTORIES="client server lib collections public tests"
+CLIENT_DIRECTORIES="lib stylesheets views views/layout"
+# files
+CLIENT_STYLESHEETS="client/stylesheets/style.css client/stylesheets/sticky_footer.css"
+
+# additional .gitignore currently contains .idea directory
+GIT_IGNORE=".idea"
+
+# Packages to install, do not edit by hand
+# If you need to customize the packages, see
+# bellow the install_packages function
+PACKAGES=()
+
+## End of variables declarations ##
 ## File templates ##
 # index.html template
 INDEX="<template name=\"index\">
@@ -24,7 +47,7 @@ MAIN="<template name=\"main\">
 
 MAIN_HELPER="// This is the main template helper
 // here you can handle some top level events,
-// e.g: a event from the nav which may be global
+// e.g: an event from the nav which may be global
 Template.events({
 
 });
@@ -136,7 +159,7 @@ SUBSCRIPTIONS="//Meteor.subscribe('a_collection');"
 
 METHODS="//Meteor.methods({
     //
-    //});"
+//});"
 
 PUBLICATIONS="//Meteor.publish('a_collection', function(){
     //    return 'a_collection'.find();
@@ -144,28 +167,9 @@ PUBLICATIONS="//Meteor.publish('a_collection', function(){
 
 FIXTURES="//if (a_collection.find().count() === 0) {
     //
-    //}"
+//}"
 
 ## End of template declarations ##
-
-## Variables Files - Directories
-ROOT_DIRECTORIES="client server lib collections public tests"
-CLIENT_DIRECTORIES="lib stylesheets views views/layout"
-# files
-CLIENT_STYLESHEETS="client/stylesheets/style.css client/stylesheets/sticky_footer.css"
-
-# Default project name
-PROJECT_NAME="new_meteor_project"
-
-# additional .gitignore currently contains .idea directory
-GIT_IGNORE=".idea"
-
-# Packages to install, do not edit by hand
-# If you need to customize the packages, see
-# bellow the install_packages function
-PACKAGES=()
-
-## End of variables declarations ##
 #
 ## Function declarations ##
 
@@ -174,13 +178,6 @@ PACKAGES=()
 # project's creation
 function user_input
 {
-    # check if project name is given
-    if [ -z "$1" ]; then
-        echo "Project name not given, will assign project_name"
-    else
-        PROJECT_NAME=$1
-    fi
-
     # unused for now but may be used in
     # future to install some packages during
     # project's creation
@@ -188,7 +185,6 @@ function user_input
         PACKAGES+=" ${arg}"
     done
 }
-
 # creates a Meteor project
 function create_project
 {
@@ -279,6 +275,7 @@ function main
     create_server_files
 
     install_packages
+    echo "cd into the new Meteor project: ${PROJECT_NAME} to start working"
 }
 
 ## End of functions declarations ##
