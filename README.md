@@ -1,4 +1,4 @@
-## A bash script to create Meteor project layouts
+## A bash script to create directory structures for new Meteor projects
 
 ### Usage:
 
@@ -7,7 +7,7 @@
 3. Create a new project:
 
 ```bash
-$meteor_project.bash PROJECT_NAME
+$meteor-project.bash PROJECT_NAME
 ```
 
 where PROJECT_NAME type the name of your project.
