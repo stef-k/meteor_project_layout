@@ -52,9 +52,9 @@ Template.events({
 
 });
 
-Template.main.helper = function (){
+Template.main.helpers({
 
-};"
+});"
 
 # head
 HEAD="<head>
