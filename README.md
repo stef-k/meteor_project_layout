@@ -12,19 +12,21 @@
 $meteor-project project PROJECT_NAME
 ```
 
-where PROJECT_NAME type the name of your project.
-**note** the first project keyword
+where `PROJECT_NAME` type the name of your project.
+
+**note** the `project` keyword
 
 #### New view
 
 During view creation a new directory is created at `client/views/`, a new template and a new helper, finally a route is register at `lib/router.js`
 
 ```bash
-#meteor-project new view VIEW_NAME
+$meteor-project new view VIEW_NAME
 ```
 
-where VIEW_NAME the name of the view to be created
-**note** the new and view keywords
+where `VIEW_NAME` the name of the view to be created
+
+**note** the `new` and `view` keywords
 
 #### New collection
 
@@ -34,8 +36,9 @@ Creates a new collection at `collections/` directory
 $meteor-project new collection COLLECTION_NAME
 ```
 
-where COLLECTION_NAME, the name of the collection to be created
-**note** the new and collection keywords
+where `COLLECTION_NAME`, the name of the collection to be created
+
+**note** the `new` and `collection` keywords
 
 
 ### INFO
