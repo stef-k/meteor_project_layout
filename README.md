@@ -1,12 +1,11 @@
 ## A bash script to create directory structures for new Meteor projects
 
-### Usage:
-
-#### New project
+### Usage - 'installation':
 
 1. Place the script in your $PATH
 2. Make it executable with `chmod +x meteor-project`
-3. Create a new project:
+
+#### New project
 
 ```bash
 $meteor-project project PROJECT_NAME
@@ -15,6 +14,26 @@ $meteor-project project PROJECT_NAME
 where `PROJECT_NAME` type the name of your project.
 
 **note** the `project` keyword
+
+**OR**
+
+```bash
+$meteor-project project PROJECT_NAME packages [PACKAGE_NAME] [PACKAGE_NAME] ...
+```
+
+as above additionally download and install all [PACKAGE_NAME] given as arguments.
+
+**note:** 
+* the `package` keyword
+* the script has some default packages hardcoded, these are:
+  * "mizzao:bootstrap-3"
+  * "iron:router"
+
+To change the default packages look for the line bellow
+
+```bash
+PACKAGES=("iron:router" "mizzao:bootstrap-3")
+```
 
 #### New view
 
