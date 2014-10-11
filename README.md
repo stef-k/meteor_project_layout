@@ -2,16 +2,40 @@
 
 ### Usage:
 
+#### New project
+
 1. Place the script in your $PATH
-2. Make it executable with `chmod +x meteor_project.bash`
+2. Make it executable with `chmod +x meteor-project`
 3. Create a new project:
 
 ```bash
-$meteor-project.bash PROJECT_NAME
+$meteor-project project PROJECT_NAME
 ```
 
 where PROJECT_NAME type the name of your project.
+**note** the first project keyword
 
+#### New view
+
+During view creation a new directory is created at `client/views/`, a new template and a new helper, finally a route is register at `lib/router.js`
+
+```bash
+#meteor-project new view VIEW_NAME
+```
+
+where VIEW_NAME the name of the view to be created
+**note** the new and view keywords
+
+#### New collection
+
+Creates a new collection at `collections/` directory
+
+```bash
+$meteor-project new collection COLLECTION_NAME
+```
+
+where COLLECTION_NAME, the name of the collection to be created
+**note** the new and collection keywords
 
 
 ### INFO
