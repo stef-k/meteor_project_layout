@@ -21,7 +21,7 @@ where `PROJECT_NAME` type the name of your project.
 $meteor-project project PROJECT_NAME packages [PACKAGE_NAME] [PACKAGE_NAME] ...
 ```
 
-as above additionally download and install all [PACKAGE_NAME] given as arguments.
+additionally download and install all [PACKAGE_NAME] given as arguments.
 
 **note:** 
 * the `package` keyword
