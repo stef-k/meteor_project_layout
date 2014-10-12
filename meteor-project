@@ -24,19 +24,18 @@ PACKAGES=("iron:router" "mizzao:bootstrap-3")
 ## File templates ##
 # index.html template
 INDEX="<template name=\"index\">
-<!--bootstrap container class delete otherwise-->
-<div class=\"container\">
-main content
-</div>
+<h2>Home page content</h2>
+<h3>I am the Index page, find me at client/views/index.html</h3>
 </template>"
 
 # main.html (iron router layout)
 MAIN="<template name=\"main\">
 <body>
 {{> header}}
-
+<!--bootstrap container class delete otherwise-->
+<div class=\"container\">
 {{> yield}}
-
+</div>
 {{> footer}}
 </body>
 </template>"
@@ -44,11 +43,11 @@ MAIN="<template name=\"main\">
 MAIN_HELPER="// This is the main template helper
 // here you can handle some top level events,
 // e.g: an event from the nav which may be global
-Template.events({
+Template.main.events ({
 
 });
 
-Template.main.helpers({
+Template.main.helpers ({
 
 });"
 
@@ -177,6 +176,7 @@ function colored()
 {
     local exp=$1;
     local color=$2;
+    local newline=$3;
     if ! [[ $color =~ ^[0-9]$ ]] ; then
        case $(echo "${color}" | tr '[:upper:]' '[:lower:]') in
         black) color=0 ;;
@@ -190,7 +190,12 @@ function colored()
        esac
     fi
     tput setaf $color;
-    echo "${exp}";
+    # if third arg is n then print and do not change line
+    if [[ ${newline} = "n" ]]; then
+        echo -n "${exp}";
+    else
+        echo "${exp}";
+    fi
     tput sgr0;
 }
 
@@ -400,6 +405,20 @@ function file_exists
     fi
 }
 
+# check if a directory is empty
+# params: directory path
+# returns: true if is empty, false otherwise
+function dir_is_empty
+{
+    if [[ -z $1 ]]; then
+        if find $1 -mindepth 1 -print -quit | grep -q .; then
+            return 0
+        else
+            return 1
+        fi
+    fi
+}
+
 # Creates a new collection
 # params: collection's name
 function create_collection
@@ -437,13 +456,13 @@ function create_template
             if file_exists "client/views/$1/$1.html";then
                 colored "The template $1 allready exists." yellow
             else
-                tpl="<template name=\"$1\">
-
+                tpl="<template name=\"$(basename $1)\">
+<h3>{{name}}</h3>
 </template>"
+                # deep directory tree
+                echo "${tpl}" > "client/views/$1/$(basename $1).html"
 
-                echo "${tpl}" > "client/views/$1/$1.html"
-
-                colored "The template $1 has been created at 'client/views/$1/$1.html'" green
+                colored "The template $1 has been created at 'client/views/$1/$(basename $1).html'" green
             fi
         fi
     else
@@ -465,26 +484,26 @@ function create_helper
                 colored "The helper $1 allready exists" yellow
             else
 
-                tpl="Template.$1.helpers({
+                tpl="Template.$(basename $1).helpers ({
 
     // controllers
-    name: function(){
-        return $1
+    name: function() {
+        return 'This is $(basename $1) template, find me at client/views/$1'
     }
 
 });
 
-Template.$1.events({
+Template.$(basename $1).events ({
 
     // event handlers
-    'click #id': function(){
+    'click #id': function() {
         //
     }
 
 });
-"
-                echo "${tpl}" > "client/views/$1/$1.js"
-                colored "The template $1 has been created at client/views/$1/$1.js" green
+"               # deep directory tree
+                echo "${tpl}" > "client/views/$1/$(basename $1).js"
+                colored "The template $1 has been created at client/views/$1/$(basename $1).js" green
             fi
         fi
     else
@@ -501,8 +520,8 @@ function add_route
         # do nothing for now
         :
     else
-        tpl="\\    this.route('$1', { \\
-        path: '/$1' \\
+        tpl="\\    this.route('$(basename $1)', { \\
+        path: '/$1/' \\
     });"
 
         # use sed to append after the pattern
@@ -523,15 +542,30 @@ function create_view
             colored "Usage: \$${script} new [view name]" cyan
         else
             if dir_exists "client/views/$1";then
-                colored "The view $1 allready exists" yellow
+                colored "The view $1 allready exists! Overwrite? [Yy]es, [Nn]o: " yellow n
+                while [[ : ]]; do
+                    read option
+                    if [[ ${option} =~ ^(yes|y|Y|Yes|YES|yES|yeS)$ ]]; then
+                            mkdir -p "client/views/$1"
+                            create_template "$1"
+                            create_helper "$1"
+                            add_route "$1"
+                            colored "The view $1 has been created at client/views/$1" green
+                            colored "and registered as route /$1" green
+                        exit;
+                    elif [[ ${option} =~ ^(no|n|N|No|NO)$ ]]; then
+                        exit;
+                    else
+                        colored "Please select either Yes, yes or No, no: " red n
+                    fi
+                done
             else
-                mkdir "client/views/$1"
+                mkdir -p "client/views/$1"
                 create_template "$1"
                 create_helper "$1"
                 add_route "$1"
-
                 colored "The view $1 has been created at client/views/$1" green
-                colored "and registered as route /$1" green
+                colored "and registered as route /$1/" green
             fi
         fi
     else
