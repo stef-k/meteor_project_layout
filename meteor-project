@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Structured Meteor projects
-# Version: 0.3
 # Tested on: Ubuntu 14.04 with
 # GNU bash, version 4.3.11(1)-release (x86_64-pc-linux-gnu)
 # the name of this script
 readonly script="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
+readonly version="0.3"
 ## Variables, Files - Directories
 PROJECT_NAME=""
 # an associative array for scaffolding fields
@@ -202,6 +202,43 @@ function colored()
     tput sgr0;
 }
 #------------------------------------------------------------------------------#
+# prints script's version and help message
+# params: optional one of the available commands to print specific to the command
+#         help
+function help
+{
+    colored "--------------------------------------------------------------------------------" blue
+    if [[ ! -z $1 ]]; then
+        if [[ $1 = "project" ]]; then
+            colored "$1 command " white n
+            colored "creates a new Meteor project" magenta
+            colored "Usage: \$${script} project [PROJECT_NAME]" cyan
+        elif [[ $1 = "new" ]]; then
+            colored "$1 command " white n
+            colored "generates a view or collection" magenta
+            colored "type: \$${script} new view or \$${script} new collection" cyan
+        elif [[ $1 = "new view" ]]; then
+            colored "$1 command " white n
+            colored "generates a new view (a template, a helper and a route)" magenta
+            colored "Usage: \$${script} new view [VIEW_NAME]" cyan
+        elif [[ $1 = "new collection" ]]; then
+            colored "$1 command " white n
+            colored "generates a new collection" magenta
+            colored "Usage: \$${script} new collection [COLLECTION_NAME]" cyan
+        elif [[ $1 = "scaffold" ]]; then
+            colored "$1 command " white n
+            colored "generates a new collection, a fixture, a view, an edit view & their helpers" magenta
+            colored "Usage: \$${script} scaffold [COLLECTION_NAME] [FIELD:TYPE] [FIELD:TYPE] ..." cyan
+            colored "Available fields: string, text, number, date" cyan
+        fi
+    else
+        colored "${script} version: ${version}"
+        colored "A script to create Meteor projects, views, collections and scaffolds"
+        colored "Available commands: project, new view, new collection, scaffold" magenta
+    fi
+    colored "--------------------------------------------------------------------------------" blue
+}
+#------------------------------------------------------------------------------#
 # checks user input and invokes the respective generator(s)
 function user_input
 {
@@ -210,18 +247,7 @@ function user_input
     # Empty args
     if [[ -z "$1" ]]; then
         colored "Error: command is missing" red
-        colored "#------------------------------------------------------------------------------#" blue
-        echo "Available commands:"
-        colored "To create a new project:" magenta
-        colored "  \$${script} project [project_name] or " cyan
-        colored "  \$${script} project [project_name] packages [package_name] [package_name] ..." cyan
-        colored "To generate various files: " magenta
-        colored "  \$${script} new view [view_name]" cyan
-        colored "       creates a new directory in views, a tempalte, a helper and a route" magenta
-        colored "  \$${script} new collection [collection_name]" cyan
-        colored "       creates a new collection in collections directory" magenta
-        colored "#------------------------------------------------------------------------------#" blue
-
+        help "$@"
     # project creation
     elif [[ "$1" = "project" ]]; then
         if [[ -z "$2" ]]; then
@@ -255,22 +281,27 @@ function user_input
     elif [[ "$1" = "new" ]]; then
                 if [[ -z "$2" ]]; then
                     colored "Error: generator name is missing" red
-                    colored "  \$${script} new view [view_name]" cyan
-                    colored "       creates a new directory in views, a tempalte, a helper and a route" magenta
-                    colored "  \$${script} new collection [collection_name]" cyan
-                    colored "       creates a new collection in collections directory" magenta
+                    help "$1"
 
                 elif [[ "$2" = "view" ]]; then
-                    create_view "$3"
+                    if [[ -z "$3" ]]; then
+                        colored "Error: view name is missing" red
+                        help "new view"
+                    else
+                        create_view "$3"
+                    fi
 
                 elif [[ "$2" = "collection" ]]; then
-                    create_collection "$3"
+                    if [[ -z "$3" ]]; then
+                        colored "Error: collection name is missing" red
+                        help "new collection"
+                    else
+                        create_collection "$3"
+                    fi
+
                 else
                     colored "Error unknown generator" red
-                    colored "  \$${script} new view [view_name]" cyan
-                    colored "       creates a new directory in views, a tempalte, a helper and a route" magenta
-                    colored "  \$${script} new collection [collection_name]" cyan
-                    colored "       creates a new collection in collections directory" magenta
+                    help "$1"
                 fi
     elif [[ "$1" = "scaffold" ]]; then
         # check for collection name and a valid array of fields:types
@@ -281,20 +312,16 @@ function user_input
                 echo "ok- i will work here later"
             else
                 colored "Error: wrong key:value pairs" red
-                colored "Usage: \$${script} scaffold [collection_name] [field:type] [field:type] ..." cyan
+                help "scaffold"
             fi
+        else
+            colored "Error: " red
+            help "scaffold"
         fi
+
     else
         colored "Error unknown command" red
-        echo "Available commands:"
-        colored "To create a new project:" magenta
-        colored "  \$${script} project [project_name] or " cyan
-        colored "  \$${script} project [project_name] packages [package_name] [package_name] ..." cyan
-        colored "To generate various files: " magenta
-        colored "  \$${script} new view [view_name]" cyan
-        colored "       creates a new directory in views, a tempalte, a helper and a route" magenta
-        colored "  \$${script} new collection [collection_name]" cyan
-        colored "       creates a new collection in collections directory" magenta
+        help ""
     fi
 }
 #------------------------------------------------------------------------------#
