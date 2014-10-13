@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
 # Structured Meteor projects
-# Version: 0.2
-#
+# Version: 0.3
+# Tested on: Ubuntu 14.04 with
+# GNU bash, version 4.3.11(1)-release (x86_64-pc-linux-gnu)
 # the name of this script
 readonly script="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
 ## Variables, Files - Directories
 PROJECT_NAME=""
-ROOT_DIRECTORIES="client server lib collections public tests"
-CLIENT_DIRECTORIES="lib stylesheets views views/layout"
+# an associative array for scaffolding fields
+declare -A fields
+readonly ROOT_DIRECTORIES="client server lib collections public tests"
+readonly CLIENT_DIRECTORIES="lib stylesheets views views/layout"
 # files
-CLIENT_STYLESHEETS="client/stylesheets/style.css client/stylesheets/sticky_footer.css"
+readonly CLIENT_STYLESHEETS="client/stylesheets/style.css client/stylesheets/sticky_footer.css"
 
 # additional .gitignore currently contains .idea directory
-GIT_IGNORE=".idea
+readonly GIT_IGNORE=".idea
 *.sublime-project"
 
 # Packages can be installed during project creation
@@ -167,7 +170,7 @@ FIXTURES="//if (a_collection.find().count() === 0) {
 ## End of template declarations ##
 #
 ## Function declarations ##
-
+#------------------------------------------------------------------------------#
 # colored echo
 # usage: colored "text" [color] [n for no new line]
 # this function is taken from:
@@ -198,7 +201,7 @@ function colored()
     fi
     tput sgr0;
 }
-
+#------------------------------------------------------------------------------#
 # checks user input and invokes the respective generator(s)
 function user_input
 {
@@ -207,6 +210,7 @@ function user_input
     # Empty args
     if [[ -z "$1" ]]; then
         colored "Error: command is missing" red
+        colored "#------------------------------------------------------------------------------#" blue
         echo "Available commands:"
         colored "To create a new project:" magenta
         colored "  \$${script} project [project_name] or " cyan
@@ -216,6 +220,7 @@ function user_input
         colored "       creates a new directory in views, a tempalte, a helper and a route" magenta
         colored "  \$${script} new collection [collection_name]" cyan
         colored "       creates a new collection in collections directory" magenta
+        colored "#------------------------------------------------------------------------------#" blue
 
     # project creation
     elif [[ "$1" = "project" ]]; then
@@ -267,6 +272,18 @@ function user_input
                     colored "  \$${script} new collection [collection_name]" cyan
                     colored "       creates a new collection in collections directory" magenta
                 fi
+    elif [[ "$1" = "scaffold" ]]; then
+        # check for collection name and a valid array of fields:types
+        if [[ ! -z "$2" ]]; then
+            # pass arguments after the collection name
+            args="${@:3}"
+            if fields_types_are_valid "${args}"; then
+                echo "ok- i will work here later"
+            else
+                colored "Error: wrong key:value pairs" red
+                colored "Usage: \$${script} scaffold [collection_name] [field:type] [field:type] ..." cyan
+            fi
+        fi
     else
         colored "Error unknown command" red
         echo "Available commands:"
@@ -280,7 +297,33 @@ function user_input
         colored "       creates a new collection in collections directory" magenta
     fi
 }
+#------------------------------------------------------------------------------#
+# checks if for all passed fields there is a respective type
+# params: an array/string of fields:types [field1:type field2:type, ...]
+# returns: true if array contains pairs only, false otherwise
+function fields_types_are_valid
+{
+    old_ifs=$IFS
+    IFS=" "
+    item_number=""
+    for pair in $1; do
+        pair_number=$(( pair_number + 1 ))
+        IFS=":"
+        for item in ${pair[*]}; do
+            item_number=$(( item_number + 1 ))
+        done
+    done
+    if [ "$(( ${item_number} % 2 ))" -eq 0 ] ; then
+        IFS=$old_ifs
+        return 0
+    else
+        IFS=$old_ifs
+        return 1
+    fi
 
+    IFS=$old_ifs
+}
+#------------------------------------------------------------------------------#
 # creates a Meteor project
 function create_project
 {
@@ -294,7 +337,7 @@ function create_project
 
     colored "Project ${PROJECT_NAME} has been created" green
 }
-
+#------------------------------------------------------------------------------#
 # installs Meteor packages
 function install_packages
 {
@@ -307,7 +350,7 @@ function install_packages
         colored "${#PACKAGES[@]} packages have been installed" green
     fi
 }
-
+#------------------------------------------------------------------------------#
 # creates project's root directories
 function create_project_root_dirs
 {
@@ -319,7 +362,7 @@ function create_project_root_dirs
     colored "Project's root directories have been created" green
 }
 
-
+#------------------------------------------------------------------------------#
 # creates project's root files
 function create_project_root_files
 {
@@ -331,7 +374,7 @@ function create_project_root_files
 
     colored "All root files have been created" green
 }
-
+#------------------------------------------------------------------------------#
 # creates client's directory structure
 function create_client_dirs
 {
@@ -341,7 +384,7 @@ function create_client_dirs
     done
     colored "Client's directory structure have been created" green
 }
-
+#------------------------------------------------------------------------------#
 # creates client's files
 function create_client_files
 {
@@ -362,7 +405,7 @@ function create_client_files
 
     colored "All client's files have been created" green
 }
-
+#------------------------------------------------------------------------------#
 # creates server's files
 function create_server_files
 {
@@ -372,7 +415,7 @@ function create_server_files
     echo "${FIXTURES}" > "server/fixtures.js"
     colored "All server files have been created" green
 }
-
+#------------------------------------------------------------------------------#
 # check if this script is invoked from a valid Meteor project root
 # by checking if .meteor directory exists
 # returns: true if in a valid project root, false otherwise
@@ -384,7 +427,7 @@ function in_project_dir
         return 1
     fi
 }
-
+#------------------------------------------------------------------------------#
 # checks if a file exists
 # returns: true if file exists, false otherwise
 function dir_exists
@@ -395,7 +438,7 @@ function dir_exists
         return 1
     fi
 }
-
+#------------------------------------------------------------------------------#
 function file_exists
 {
     if [[ -f "$1" ]]; then
@@ -404,7 +447,7 @@ function file_exists
         return 1
     fi
 }
-
+#------------------------------------------------------------------------------#
 # check if a directory is empty
 # params: directory path
 # returns: true if is empty, false otherwise
@@ -418,7 +461,7 @@ function dir_is_empty
         fi
     fi
 }
-
+#------------------------------------------------------------------------------#
 # Creates a new collection
 # params: collection's name
 function create_collection
@@ -443,10 +486,10 @@ function create_collection
         colored "This command must be called from project's root directory" cyan
     fi
 }
-
+#------------------------------------------------------------------------------#
 # creates a fixture for a given collection
 # params: collection's name
-#       : field names (optional)
+#       : field names:types (optional)
 function create_fixture
 {
     tpl="if (${basename $1}.find().count() === 0) {
@@ -472,7 +515,7 @@ function create_fixture
     echo "" >> "server/fixtures.js"
     echo "${tpl}" >> "server/fixtures.js"
 }
-
+#------------------------------------------------------------------------------#
 # Creates a new template
 # params: template's name
 function create_template
@@ -499,7 +542,7 @@ function create_template
         colored "This command must be called from project's root directory" cyan
     fi
 }
-
+#------------------------------------------------------------------------------#
 # Creates a new helper
 # params: helper's name
 function create_helper
@@ -539,7 +582,7 @@ Template.$(basename $1).events ({
         colored "This command must be called from project's root directory" cyan
     fi
 }
-
+#------------------------------------------------------------------------------#
 # Adds a new route into router.js
 # params: view's name
 #       : scaffold (just the word)
@@ -572,7 +615,7 @@ function add_route
         fi
     fi
 }
-
+#------------------------------------------------------------------------------#
 # Creates a combination of a template and a helper
 # params: view's name
 function create_view
@@ -614,13 +657,11 @@ function create_view
         colored "This command must be called from project's root directory" cyan
     fi
 }
-
-
+#------------------------------------------------------------------------------#
 # creates a collection, view and edit templates with their helpers
 # their routes and fixtures
 # params: model's name which is the same as the view's name
-#       : field names
-#       : field types
+#       : fields names:types
 # example: do_scaffold blogpost title:text created:datetime posted:boolean
 function do_scaffold
 {
@@ -628,13 +669,13 @@ function do_scaffold
     add_route
     create_fixture "$1" "${fieldnames[@]}"
 }
-
+#------------------------------------------------------------------------------#
 function main
 {
     user_input "$@"
 }
 
 ## End of functions declarations ##
-
+#------------------------------------------------------------------------------#
 # invoke the main function
 main "$@"
