@@ -169,7 +169,7 @@ FIXTURES="//if (a_collection.find().count() === 0) {
 ## Function declarations ##
 
 # colored echo
-# usage: colored "text" [color]
+# usage: colored "text" [color] [n for no new line]
 # this function is taken from:
 # http://stackoverflow.com/a/23006365/307826
 function colored()
@@ -444,6 +444,35 @@ function create_collection
     fi
 }
 
+# creates a fixture for a given collection
+# params: collection's name
+#       : field names (optional)
+function create_fixture
+{
+    tpl="if (${basename $1}.find().count() === 0) {
+    for (var i=0; i < 5; i++) {
+        ${basename $1}.insert({"
+
+    tpl_end="
+        });
+    }
+}"
+
+    for (( i = 0; i < 5; i++ )); do
+        for field in "${@:2}"; do
+            tpl+="
+        ${field}: ${field}${i}"
+        if [[ ! ${i} -gt 5 ]]; then
+            tpl+=","
+        fi
+        done
+    done
+
+    tpl+="${tpl_end}"
+    echo "" >> "server/fixtures.js"
+    echo "${tpl}" >> "server/fixtures.js"
+}
+
 # Creates a new template
 # params: template's name
 function create_template
@@ -501,8 +530,7 @@ Template.$(basename $1).events ({
     }
 
 });
-"               # deep directory tree
-                echo "${tpl}" > "client/views/$1/$(basename $1).js"
+"                echo "${tpl}" > "client/views/$1/$(basename $1).js"
                 colored "The template $1 has been created at client/views/$1/$(basename $1).js" green
             fi
         fi
@@ -514,12 +542,14 @@ Template.$(basename $1).events ({
 
 # Adds a new route into router.js
 # params: view's name
+#       : scaffold (just the word)
 function add_route
 {
     if [[ -z $1 ]]; then
         # do nothing for now
         :
     else
+        # if is a simple view creation
         tpl="\\    this.route('$(basename $1)', { \\
         path: '/$1/' \\
     });"
@@ -529,6 +559,17 @@ function add_route
 
         sed -i "/$pattern/a $tpl\ " "lib/router.js"
         sed -i "/$pattern/a \ " "lib/router.js"
+
+        # is used for scaffolding
+            if [[ -z $2 ]] && [[ $2 = "scaffold" ]]; then
+
+            tpl_edit="\\    this.route('edit_$(basename $1)', { \\
+        path: '/$1/edit/' \\
+    });"
+
+            sed -i "/$pattern/a $tpl_edit\ " "lib/router.js"
+            sed -i "/$pattern/a \ " "lib/router.js"
+        fi
     fi
 }
 
@@ -572,6 +613,20 @@ function create_view
         colored "Error: not valid Meteor project directory" red
         colored "This command must be called from project's root directory" cyan
     fi
+}
+
+
+# creates a collection, view and edit templates with their helpers
+# their routes and fixtures
+# params: model's name which is the same as the view's name
+#       : field names
+#       : field types
+# example: do_scaffold blogpost title:text created:datetime posted:boolean
+function do_scaffold
+{
+
+    add_route
+    create_fixture "$1" "${fieldnames[@]}"
 }
 
 function main
