@@ -157,15 +157,13 @@ Router.map(function () {
 
 SUBSCRIPTIONS="//Meteor.subscribe('a_collection');"
 
-SUBSCRIPTIONS="//Meteor.subscribe('a_collection');"
-
 METHODS="//Meteor.methods({
     //
 //});"
 
 PUBLICATIONS="//Meteor.publish('a_collection', function(){
-    //    return 'a_collection'.find();
-    //});"
+//    return 'a_collection'.find();
+//});"
 
 FIXTURES="//if (a_collection.find().count() === 0) {
     //
@@ -302,6 +300,7 @@ function user_input
                     else
                         create_collection "$3"
                         create_fixture "$3"
+                        register_subscriptions "$3"
                     fi
 
                 else
@@ -716,25 +715,42 @@ function add_route
         :
     else
         # if is a simple view creation
-        tpl="\\    this.route('$(basename $1)', { \\
+        # show all documents in collection
+        tpl="\\    this.route('$(basename "$1")', { \\
         path: '/$1/' \\
     });"
 
-        # use sed to append after the pattern
+        # append the template beneath the pattern
         pattern="Router.map"
 
         sed -i "/$pattern/a $tpl\ " "lib/router.js"
         sed -i "/$pattern/a \ " "lib/router.js"
 
-        # is used for scaffolding
-            if [[ -z $2 ]] && [[ $2 = "scaffold" ]]; then
+        # if we are scaffolding
 
-            tpl_edit="\\    this.route('edit_$(basename $1)', { \\
-        path: '/$1/edit/' \\
+            if [[ $2 = "scaffold" ]]; then
+                # creates view single document, edit and new urls
+                # deletion of a document is direclty handled by a server method
+                # edit a document by id
+                tpl_edit="\\    this.route('edit_$(basename "$1")', { \\
+        path: '/$1/:_id/edit/' \\
     });"
-
-            sed -i "/$pattern/a $tpl_edit\ " "lib/router.js"
-            sed -i "/$pattern/a \ " "lib/router.js"
+                sed -i "/$pattern/a $tpl_edit\ " "lib/router.js"
+                sed -i "/$pattern/a \ " "lib/router.js"
+            #------------------------------------------------------------------#
+                # view a document by id
+                tpl_view="\\    this.route('view_$(basename "$1")', { \\
+        path: '/$1/:_id/' \\
+    });"
+                sed -i "/$pattern/a $tpl_view\ " "lib/router.js"
+                sed -i "/$pattern/a \ " "lib/router.js"
+            #------------------------------------------------------------------#
+                # new document
+                tpl_new="\\    this.route('new_$(basename "$1")', { \\
+        path: '/$1/new/' \\
+    });"
+                sed -i "/$pattern/a $tpl_new\ " "lib/router.js"
+                sed -i "/$pattern/a \ " "lib/router.js"
         fi
     fi
 }
@@ -780,6 +796,25 @@ function create_view
         colored "This command must be called from project's root directory" cyan
     fi
 }
+# registers each a new collection to server's publications and
+# client's subscriptions files
+# params: collection's name
+function register_subscriptions
+{
+    if [[ ! -z "$1" ]]; then
+        tpl_sub="
+Meteor.subscribe('$(basename "$1")');"
+
+        tpl_pub="
+Meteor.publish('$(basename "$1")', function(){
+    return $(basename "$1").find();
+});"
+
+        echo "${tpl_sub}" >> "client/lib/subscriptions.js"
+        echo "${tpl_pub}" >> "server/publications.js"
+    fi
+}
+
 #------------------------------------------------------------------------------#
 # creates a collection, view and edit templates with their helpers
 # their routes and fixtures
@@ -814,8 +849,9 @@ function do_scaffold
             else
                 # scaffold here
                 create_collection "$1" > /dev/null
-                add_route
+                add_route "$1" "scaffold"
                 create_fixture "$1" "scaffold"
+                register_subscriptions "$1"
                 colored "The scaffold for $1 has been created at client/views/$1" green
             fi
         fi
