@@ -277,7 +277,8 @@ function user_input
                 done
             fi
             install_packages
-
+            echo "removing autopublish package since subscriptions are being automatically created"
+            meteor remove autopublish
             colored "cd into project ${PROJECT_NAME} to start working" yellow
         fi
     elif [[ "$1" = "new" ]]; then
@@ -654,7 +655,7 @@ function create_template
 <h3>{{name}}</h3>
 </template>"
                 # deep directory tree
-                echo "${tpl}" > "client/views/$1/$(basename $1).html"
+                echo "${tpl}" > "client/views/$1/$(basename "$1").html"
 
                 colored "The template $1 has been created at 'client/views/$1/$(basename $1).html'" green
             fi
@@ -663,6 +664,115 @@ function create_template
         colored "Error: not valid Meteor project directory" red
         colored "This command must be called from project's root directory" cyan
     fi
+}
+# creates templates for scaffolded collections
+# params: collection's name
+# remarks: the function assumes that the calling do_scaffold function
+# has checked that the directory does not exist
+#
+# this is a series of functions, each responsible to created one template
+function scaffold_template
+{
+    # create the directory
+    mkdir -p "client/views/$1"
+    scaffold_template_index "$1"
+    scaffold_template_show "$1"
+    scaffold_template_new "$1"
+    scaffold_template_edit "$1"
+}
+#------------------------------------------------------------------------------#
+# creates the main template for the scaffold
+# params: collection's name
+function scaffold_template_index
+{
+    local tpl_index="<template name=\"$(basename "$1")\">
+<h3>All $(basename "$1")(s)</h3>
+<p><pre>{{tpl_info}}</pre>
+you can delete this message from the template and/or the helper</p>
+    <div class=\"table-responsive\">
+        <table class=\"table table-hover table-condensed table-bordered\">
+            <thead>
+                <tr>"
+
+    local tpl_end="
+        </tbody>
+       </table>
+    </div>
+</template>"
+    # display the main content in a table where
+    # the number of columns = length of field_names array
+    local tpl_mid=""
+    for col in ${field_names[*]}; do
+        tpl_mid+="
+                    <th>${col}</th>"
+    done
+    # close the headers
+    tpl_mid+="
+               </tr>"
+    tpl_mid+="
+           </thead>"
+    tpl_mid+="
+           <tbody>"
+
+    # show document values and show, edit, delete links
+    tpl_mid+="
+                    {{#each $(basename "$1")}}
+                        <tr>"
+    for value in ${field_names[*]}; do
+        tpl_mid+="
+                            <td>{{${value}}}</td>"
+    done
+
+    # close table values
+    tpl_mid+="
+                            <td>
+                                <a href=\"{{pathFor 'show_$(basename "$1")'}}\">Show </a>,
+                                <a href=\"{{pathFor 'edit_$(basename "$1")'}}\"> Edit</a>,
+                                <a href=\"{{pathFor 'delete_$(basename "$1")'}}\"> Delete</a>
+                            </td>
+                        </tr>
+                    {{/each}}"
+    # add all to first template before writting to file
+    tpl_index+="${tpl_mid}"
+    tpl_index+="${tpl_end}"
+
+    echo "${tpl_index}" > "client/views/$1/$(basename "$1").html"
+}
+#------------------------------------------------------------------------------#
+# creates the show template for a single document in a collection
+# params: collection's name
+function scaffold_template_show
+{
+    tpl_show="<template name=\"show_$(basename "$1")\">
+<h3>{{name}}</h3>
+
+</template>"
+
+
+    echo "${tpl_show}" > "client/views/$1/show_$(basename $1).html"
+}
+#------------------------------------------------------------------------------#
+# creates the new template for a collection
+# params: collection's name
+function scaffold_template_new
+{
+    tpl_new="<template name=\"new_$(basename "$1")\">
+<h3>New {{name}}</h3>
+
+</template>"
+
+
+    echo "${tpl_new}" > "client/views/$1/new_$(basename $1).html"
+}
+#------------------------------------------------------------------------------#
+# creates the edit template for a single document in a collection
+# params: collection's name
+function scaffold_template_edit
+{
+    tpl_edit=""
+
+
+    echo "${tpl_edit}" > "client/views/$1/edit_$(basename $1).html"
 }
 #------------------------------------------------------------------------------#
 # Creates a new helper
@@ -705,6 +815,65 @@ Template.$(basename $1).events ({
     fi
 }
 #------------------------------------------------------------------------------#
+# creates a series of helpers for a given scaffold
+# params: collection's name
+# remarks: this function assumes that the caller function do_scaffold has checked
+# for already existing views (directories)
+function scaffold_helper
+{
+    scaffold_helper_index "$1"
+}
+#------------------------------------------------------------------------------#
+# creates the helper for the main (index) page of the scaffold
+# params: collection's name
+function scaffold_helper_index
+{
+    tpl="Template.$(basename $1).helpers ({
+
+    // controllers
+    tpl_info: function() {
+        return 'This is $(basename $1) template, find me at client/views/$1'
+    },
+
+    $(basename $1): function() {
+        return $(basename $1).find().fetch();
+    }
+
+});
+
+Template.$(basename $1).events ({
+
+    // event handlers
+    'click #id': function() {
+        //
+    }
+
+})
+"
+    echo "${tpl}" > "client/views/$1/$(basename "$1").js"
+}
+#------------------------------------------------------------------------------#
+# creates the helper for the show template for a single document in a collection
+# params: collection's name
+function scaffold_helper_show
+{
+:
+}
+#------------------------------------------------------------------------------#
+# creates a helper for the new template for a single document in a collection
+# params: collection's name
+function scaffold_helper_new
+{
+:
+}
+#------------------------------------------------------------------------------#
+# creates a helper for the edit template for a single document in a collection
+# params: collection's name
+function scaffold_helper_edit
+{
+:
+}
+#------------------------------------------------------------------------------#
 # Adds a new route into router.js
 # params: view's name
 #       : scaffold (just the word)
@@ -739,10 +908,10 @@ function add_route
                 sed -i "/$pattern/a \ " "lib/router.js"
             #------------------------------------------------------------------#
                 # view a document by id
-                tpl_view="\\    this.route('view_$(basename "$1")', { \\
+                tpl_show="\\    this.route('show_$(basename "$1")', { \\
         path: '/$1/:_id/' \\
     });"
-                sed -i "/$pattern/a $tpl_view\ " "lib/router.js"
+                sed -i "/$pattern/a $tpl_show\ " "lib/router.js"
                 sed -i "/$pattern/a \ " "lib/router.js"
             #------------------------------------------------------------------#
                 # new document
@@ -765,23 +934,7 @@ function create_view
             colored "Usage: \$${script} new [view name]" cyan
         else
             if dir_exists "client/views/$1";then
-                colored "The view $1 allready exists! Overwrite? [Yy]es, [Nn]o: " yellow n
-                while [[ : ]]; do
-                    read option
-                    if [[ ${option} =~ ^(yes|y|Y|Yes|YES|yES|yeS)$ ]]; then
-                            mkdir -p "client/views/$1"
-                            create_template "$1"
-                            create_helper "$1"
-                            add_route "$1"
-                            colored "The view $1 has been created at client/views/$1" green
-                            colored "and registered as route /$1" green
-                        exit;
-                    elif [[ ${option} =~ ^(no|n|N|No|NO)$ ]]; then
-                        exit;
-                    else
-                        colored "Please select either Yes, yes or No, no: " red n
-                    fi
-                done
+                colored "Error: The view $1 allready exists!" red
             else
                 mkdir -p "client/views/$1"
                 create_template "$1"
@@ -829,29 +982,15 @@ function do_scaffold
             colored "Usage: \$${script} new [view name]" cyan
         else
             if dir_exists "client/views/$1";then
-                colored "The view $1 allready exists! Overwrite? [Yy]es, [Nn]o: " yellow n
-                while [[ : ]]; do
-                    read option
-                    if [[ ${option} =~ ^(yes|y|Y|Yes|YES|yES|yeS)$ ]]; then
-                            mkdir -p "client/views/$1"
-                            create_template "$1"
-                            create_helper "$1"
-                            add_route "$1"
-                            colored "The view $1 has been created at client/views/$1" green
-                            colored "and registered as route /$1" green
-                        exit;
-                    elif [[ ${option} =~ ^(no|n|N|No|NO)$ ]]; then
-                        exit;
-                    else
-                        colored "Please select either Yes, yes or No, no: " red n
-                    fi
-                done
+                colored "Error: The view $1 allready exists!" red
             else
                 # scaffold here
                 create_collection "$1" > /dev/null
                 add_route "$1" "scaffold"
                 create_fixture "$1" "scaffold"
                 register_subscriptions "$1"
+                scaffold_template "$1"
+                scaffold_helper "$1"
                 colored "The scaffold for $1 has been created at client/views/$1" green
             fi
         fi
