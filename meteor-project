@@ -698,6 +698,7 @@ you can delete this message from the template and/or the helper</p>
         </tbody>
        </table>
     </div>
+    <a class=\"btn btn-success btn-xs\" href=\"{{pathFor 'new_$(basename "$1")'}}\">New $(basename "$1")</a>
 </template>"
     # display the main content in a table where
     # the number of columns = length of field_names array
@@ -726,9 +727,12 @@ you can delete this message from the template and/or the helper</p>
     # close table values
     tpl_mid+="
                             <td>
-                                <a href=\"{{pathFor 'show_$(basename "$1")'}}\">Show </a>,
-                                <a href=\"{{pathFor 'edit_$(basename "$1")'}}\"> Edit</a>,
-                                <a href=\"{{pathFor 'delete_$(basename "$1")'}}\"> Delete</a>
+                                <a class=\"btn btn-primary btn-xs\" \
+href=\"{{pathFor 'show_$(basename "$1")'}}\">Show </a>
+                                <a class=\"btn btn-primary btn-xs\" \
+href=\"{{pathFor 'edit_$(basename "$1")'}}\"> Edit</a>
+                                <a class=\"btn btn-danger btn-xs\" \
+href=\"\" id=\"delete\">Delete</a>
                             </td>
                         </tr>
                     {{/each}}"
@@ -749,7 +753,7 @@ function scaffold_template_show
 </template>"
 
 
-    echo "${tpl_show}" > "client/views/$1/show_$(basename $1).html"
+    echo "${tpl_show}" > "client/views/$1/show_$(basename "$1").html"
 }
 #------------------------------------------------------------------------------#
 # creates the new template for a collection
@@ -762,17 +766,20 @@ function scaffold_template_new
 </template>"
 
 
-    echo "${tpl_new}" > "client/views/$1/new_$(basename $1).html"
+    echo "${tpl_new}" > "client/views/$1/new_$(basename "$1").html"
 }
 #------------------------------------------------------------------------------#
 # creates the edit template for a single document in a collection
 # params: collection's name
 function scaffold_template_edit
 {
-    tpl_edit=""
+    tpl_edit="<template name=\"edit_$(basename "$1")\">
+<h3>Edit {{name}}</h3>
+
+</template>"
 
 
-    echo "${tpl_edit}" > "client/views/$1/edit_$(basename $1).html"
+    echo "${tpl_edit}" > "client/views/$1/edit_$(basename "$1").html"
 }
 #------------------------------------------------------------------------------#
 # Creates a new helper
@@ -788,25 +795,26 @@ function create_helper
                 colored "The helper $1 allready exists" yellow
             else
 
-                tpl="Template.$(basename $1).helpers ({
+                tpl="Template.$(basename "$1").helpers ({
 
     // controllers
     name: function() {
-        return 'This is $(basename $1) template, find me at client/views/$1'
+        return 'This is $(basename "$1") template, find me at client/views/$1'
     }
 
 });
 
-Template.$(basename $1).events ({
+Template.$(basename "$1").events ({
 
     // event handlers
-    'click #id': function() {
+    'click #delete': function() {
         //
     }
 
 });
-"                echo "${tpl}" > "client/views/$1/$(basename $1).js"
-                colored "The template $1 has been created at client/views/$1/$(basename $1).js" green
+"
+                echo "${tpl}" > "client/views/$1/$(basename "$1").js"
+                colored "The template $1 has been created at client/views/$1/$(basename "$1").js" green
             fi
         fi
     else
@@ -828,27 +836,28 @@ function scaffold_helper
 # params: collection's name
 function scaffold_helper_index
 {
-    tpl="Template.$(basename $1).helpers ({
+    tpl="Template.$(basename "$1").helpers ({
 
     // controllers
     tpl_info: function() {
-        return 'This is $(basename $1) template, find me at client/views/$1'
+        return 'This is $(basename "$1") template, find me at client/views/$1'
     },
 
-    $(basename $1): function() {
-        return $(basename $1).find().fetch();
+    $(basename "$1"): function() {
+        return $(basename "$1").find().fetch();
     }
 
 });
 
-Template.$(basename $1).events ({
+Template.$(basename "$1").events ({
 
     // event handlers
-    'click #id': function() {
-        //
+    // delete the selected object
+    'click #delete': function(evt, tpl) {
+        Meteor.call('delete$(basename "$1")', this._id);
     }
 
-})
+});
 "
     echo "${tpl}" > "client/views/$1/$(basename "$1").js"
 }
@@ -873,6 +882,7 @@ function scaffold_helper_edit
 {
 :
 }
+# TODO: add scaffold methods
 #------------------------------------------------------------------------------#
 # Adds a new route into router.js
 # params: view's name
@@ -898,8 +908,7 @@ function add_route
         # if we are scaffolding
 
             if [[ $2 = "scaffold" ]]; then
-                # creates view single document, edit and new urls
-                # deletion of a document is direclty handled by a server method
+                # creates view single document, edit, new urls
                 # edit a document by id
                 tpl_edit="\\    this.route('edit_$(basename "$1")', { \\
         path: '/$1/:_id/edit/' \\
