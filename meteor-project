@@ -6,9 +6,13 @@
 readonly script="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
 readonly version="0.3"
 ## Variables, Files - Directories
+# project's name do not edit
 PROJECT_NAME=""
-# an associative array for scaffolding fields
-declare -A fields
+# how many fixtures you want to creat for each collection
+NUMBER_OF_FIXTURES=5
+# an array for scaffolding fields
+declare field_names
+declare field_types
 readonly ROOT_DIRECTORIES="client server lib collections public tests"
 readonly CLIENT_DIRECTORIES="lib stylesheets views views/layout"
 # files
@@ -229,7 +233,7 @@ function help
             colored "$1 command " white n
             colored "generates a new collection, a fixture, a view, an edit view & their helpers" magenta
             colored "Usage: \$${script} scaffold [COLLECTION_NAME] [FIELD:TYPE] [FIELD:TYPE] ..." cyan
-            colored "Available fields: string, text, number, date" cyan
+            colored "Available fields: string, text, number, date and boolean" cyan
         fi
     else
         colored "${script} version: ${version}"
@@ -297,6 +301,7 @@ function user_input
                         help "new collection"
                     else
                         create_collection "$3"
+                        create_fixture "$3"
                     fi
 
                 else
@@ -308,14 +313,21 @@ function user_input
         if [[ ! -z "$2" ]]; then
             # pass arguments after the collection name
             args="${@:3}"
-            if fields_types_are_valid "${args}"; then
-                echo "ok- i will work here later"
+            if fields_pairs_are_valid "${args}"; then
+                if field_types_are_valid "${args}";then
+                    pack_fields "${args}"
+                    # start scaffolding
+                    do_scaffold "$2"
+                else
+                    colored "Error: wrong types provided" red
+                    help "scaffold"
+                fi
             else
                 colored "Error: wrong key:value pairs" red
                 help "scaffold"
             fi
         else
-            colored "Error: " red
+            colored "Error: collection (model) name is missing" red
             help "scaffold"
         fi
 
@@ -328,7 +340,7 @@ function user_input
 # checks if for all passed fields there is a respective type
 # params: an array/string of fields:types [field1:type field2:type, ...]
 # returns: true if array contains pairs only, false otherwise
-function fields_types_are_valid
+function fields_pairs_are_valid
 {
     old_ifs=$IFS
     IFS=" "
@@ -347,6 +359,67 @@ function fields_types_are_valid
         IFS=$old_ifs
         return 1
     fi
+
+    IFS=$old_ifs
+}
+#------------------------------------------------------------------------------#
+# check if all passed types for a scaffold are valid
+# params: an array/string of field:type pairs
+# remarks: available types are: string, text, number, date
+function field_types_are_valid
+{
+    old_ifs=$IFS
+    IFS=" "
+    result=0
+
+    for pair in $1; do
+        IFS=":"
+        index=0
+        for item in ${pair};do
+            index=$(( index + 1 ))
+            if (( index == 2 )); then
+                case "${item}" in
+                    "string" )
+                        break;;
+                    "text" )
+                        break;;
+                    "number" )
+                        break;;
+                    "date" )
+                        break;;
+                    "boolean" )
+                        break;;
+                    # if nothing matched return error
+                    * )
+                        result=1
+                esac
+            fi
+        done
+    done
+
+    return ${result}
+    IFS=$old_ifs
+}
+#------------------------------------------------------------------------------#
+# separates field names and types and saves them into
+# the field_names and field_types arrays
+# params: an array/string of field:type pairs
+function pack_fields
+{
+    old_ifs=$IFS
+    IFS=" "
+    for pair in $1; do
+        IFS=":"
+        index=0
+        for item in ${pair};do
+            index=$(( index + 1 ))
+            if (( index == 1 )); then
+                field_names+=( "${item}" )
+            else
+                field_types+=( "${item}" )
+            fi
+        done
+    done
 
     IFS=$old_ifs
 }
@@ -516,29 +589,52 @@ function create_collection
 #------------------------------------------------------------------------------#
 # creates a fixture for a given collection
 # params: collection's name
-#       : field names:types (optional)
+#       : keyword scaffold (optional)
+# remarks: if scaffold keyword is given then the
+#          function looks the fields array to get
+#          all available field names and types
 function create_fixture
 {
-    tpl="if (${basename $1}.find().count() === 0) {
-    for (var i=0; i < 5; i++) {
-        ${basename $1}.insert({"
+    # generate NUMBER_OF_FIXTURES
+    tpl="if ($(basename "$1").find().count() === 0) {
+    for (var i=0; i < ${NUMBER_OF_FIXTURES}; i++) {
+        $(basename "$1").insert({"
 
     tpl_end="
         });
     }
 }"
 
-    for (( i = 0; i < 5; i++ )); do
-        for field in "${@:2}"; do
-            tpl+="
-        ${field}: ${field}${i}"
-        if [[ ! ${i} -gt 5 ]]; then
-            tpl+=","
-        fi
-        done
-    done
+    tpl_mid=""
+    if [[ "$2" = "scaffold" ]]; then
+            for (( j = 0; j < ${#field_names[*]}; j++ )); do
+                # generate a field value according to it's type
+                local val
+                if [[ ${field_types[j]} = "number" ]]; then
+                    val="i"
+                elif [[ ${field_types[j]} = "string" ]]; then
+                    val="'short string ' + i"
+                elif [[ ${field_types[j]} = "text" ]]; then
+                    val="'this is a long text ' + i"
+                elif [[ ${field_types[j]} = "date" ]]; then
+                    val=\'$(date "+%b-%d-%Y")\'
+                elif [[ ${field_types[j]} = "boolean" ]]; then
+                    val="true"
+                fi
+                tpl_mid+="
+            ${field_names[j]}: ${val}"
+                # add comma to collection field if needed
+                if (( j+1 < ${#field_names[*]} )); then
+                    tpl_mid+=","
+                fi
+            done
+    # if not called during a scaffold create a simpler version
+    else
+        tpl_mid="
+            $(basename "$1"): '$(basename "$1") ' + i"
+    fi
 
-    tpl+="${tpl_end}"
+    tpl+="${tpl_mid}${tpl_end}"
     echo "" >> "server/fixtures.js"
     echo "${tpl}" >> "server/fixtures.js"
 }
@@ -692,9 +788,41 @@ function create_view
 # example: do_scaffold blogpost title:text created:datetime posted:boolean
 function do_scaffold
 {
-
-    add_route
-    create_fixture "$1" "${fieldnames[@]}"
+    if in_project_dir; then
+        if [[ -z $1 ]]; then
+            colored "Error: view name is missing" red
+            colored "Usage: \$${script} new [view name]" cyan
+        else
+            if dir_exists "client/views/$1";then
+                colored "The view $1 allready exists! Overwrite? [Yy]es, [Nn]o: " yellow n
+                while [[ : ]]; do
+                    read option
+                    if [[ ${option} =~ ^(yes|y|Y|Yes|YES|yES|yeS)$ ]]; then
+                            mkdir -p "client/views/$1"
+                            create_template "$1"
+                            create_helper "$1"
+                            add_route "$1"
+                            colored "The view $1 has been created at client/views/$1" green
+                            colored "and registered as route /$1" green
+                        exit;
+                    elif [[ ${option} =~ ^(no|n|N|No|NO)$ ]]; then
+                        exit;
+                    else
+                        colored "Please select either Yes, yes or No, no: " red n
+                    fi
+                done
+            else
+                # scaffold here
+                create_collection "$1" > /dev/null
+                add_route
+                create_fixture "$1" "scaffold"
+                colored "The scaffold for $1 has been created at client/views/$1" green
+            fi
+        fi
+    else
+        colored "Error: not valid Meteor project directory" red
+        colored "This command must be called from project's root directory" cyan
+    fi
 }
 #------------------------------------------------------------------------------#
 function main
