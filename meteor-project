@@ -157,9 +157,9 @@ Router.map(function () {
 
 SUBSCRIPTIONS="//Meteor.subscribe('a_collection');"
 
-METHODS="//Meteor.methods({
-    //
-//});"
+METHODS="Meteor.methods({
+
+});"
 
 PUBLICATIONS="//Meteor.publish('a_collection', function(){
 //    return 'a_collection'.find();
@@ -684,7 +684,7 @@ function create_template
                 colored "The template $1 allready exists." yellow
             else
                 tpl="<template name=\"$(basename "$1")\">
-<h3>{{name}}</h3>
+<h3>$(basename "$1")</h3>
 </template>"
                 # deep directory tree
                 echo "${tpl}" > "client/views/$1/$(basename "$1").html"
@@ -784,7 +784,7 @@ function scaffold_template_show
     local tpl_mid
     local tpl_end
     tpl_show="<template name=\"show_$(basename "$1")\">
-    <h3>Viewing {{name}}</h3>
+    <h3>Viewing $(basename "$1")</h3>
     <div class=\"panel panel-default\">
         <div class=\"panel-body\">"
 
@@ -810,7 +810,7 @@ function scaffold_template_show
 function scaffold_template_new
 {
     local tpl_new="<template name=\"new_$(basename "$1")\">
-<h3>New {{name}}</h3>
+<h3>New $(basename "$1")</h3>
 {{> form_$(basename "$1")}}
 <button type=\"button\" class=\"btn btn-primary btn-xs\" id=\"save\">Save</button>
 <a class=\"btn btn-default btn-xs\"  href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
@@ -825,7 +825,7 @@ function scaffold_template_new
 function scaffold_template_edit
 {
     local tpl_edit="<template name=\"edit_$(basename "$1")\">
-<h3>Edit {{name}}</h3>
+<h3>Edit $(basename "$1")</h3>
 {{> form_$(basename "$1")}}
 <button type=\"button\" class=\"btn btn-primary btn-xs\" id=\"save\">Save</button>
 <a class=\"btn btn-default btn-xs\"  href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
@@ -929,7 +929,7 @@ function scaffold_form
 
         elif [[ ${field_types["${i}"]} == "select" ]]; then
             tpl_mid+="
-            <select class=\"form-control\" id=\"select_${field_names["${i}"]}\">"
+            <select class=\"form-control\" id=\"input_${field_names["${i}"]}\">"
             for j in {1..5}; do
                 tpl_mid+="
                 <option selected=\"{{selected_${field_names["${i}"]}}}\">
@@ -966,7 +966,7 @@ function create_helper
                 local tpl="Template.$(basename "$1").helpers ({
 
     // controllers
-    name: function() {
+    tpl_info: function() {
         return 'This is $(basename "$1") template, find me at client/views/$1'
     }
 
@@ -999,6 +999,8 @@ function scaffold_helper
 {
     scaffold_helper_index "$1"
     scaffold_helper_show "$1"
+    scaffold_helper_new "$1"
+    scaffold_helper_edit "$1"
 }
 #------------------------------------------------------------------------------#
 # creates the helper for the main (index) page of the scaffold
@@ -1023,7 +1025,7 @@ Template.$(basename "$1").events ({
     // event handlers
     // delete the selected object
     'click #delete': function(evt, tpl) {
-        Meteor.call('delete$(basename "$1")', this._id);
+        Meteor.call('delete_$(basename "$1")', this._id);
     }
 
 });
@@ -1047,8 +1049,7 @@ function scaffold_helper_show
 Template.show_$(basename "$1").events ({
 
     // event handlers
-    // delete the selected object
-    //'click #something': function(evt, tpl) {
+    //'click #': function(evt, tpl) {
         //
     //}
 
@@ -1062,14 +1063,146 @@ Template.show_$(basename "$1").events ({
 # params: collection's name
 function scaffold_helper_new
 {
-:
+    local tpl_new="Template.new_$(basename "$1").helpers ({
+
+    // controllers
+    //$(basename "$1"): function() {
+        //
+    //}
+
+});
+
+Template.new_$(basename "$1").events ({
+    // event handlers
+    'click #save': function(evt, tpl) {
+        evt.preventDefault();
+"
+
+    tpl_end="    }
+
+});
+"
+    local tpl_mid="
+        var new_$(basename "$1") = {"
+
+    for (( i = 0; i < ${#field_names[*]}; i++ )); do
+        tpl_mid+="
+            ${field_names[${i}]}: tpl.find('#input_${field_names[${i}]}').value"
+        if (( i < ${#field_names[*]} )); then
+            tpl_mid+=","
+        fi
+    done
+
+    tpl_mid+="
+        };
+
+        // the method returns the new object id after saving it into the db
+        Meteor.call('insert_$(basename "$1")', new_$(basename "$1"));
+        Router.go('$(basename "$1")');
+
+"
+
+    tpl_new+="${tpl_mid}"
+    tpl_new+="${tpl_end}"
+    echo "${tpl_new}" > "client/views/$1/new_$(basename "$1").js"
 }
 #------------------------------------------------------------------------------#
 # creates a helper for the edit template for a single document in a collection
 # params: collection's name
 function scaffold_helper_edit
 {
-:
+    local tpl_edit="Template.edit_$(basename "$1").helpers ({
+
+    // controllers
+    //$(basename "$1"): function() {
+        //
+    //}
+
+});
+
+Template.edit_$(basename "$1").events ({
+    // event handlers
+    'click #save': function(evt, tpl) {
+        evt.preventDefault();
+"
+
+    tpl_end="    }
+
+});
+"
+    local tpl_mid="
+        var updated_$(basename "$1") = {"
+
+    for (( i = 0; i < ${#field_names[*]}; i++ )); do
+        tpl_mid+="
+            ${field_names[${i}]}: tpl.find('#input_${field_names[${i}]}').value"
+        if (( i < ${#field_names[*]} )); then
+            tpl_mid+=","
+        fi
+    done
+
+    tpl_mid+="
+        };
+
+        // the method returns the new object id after saving it into the db
+        Meteor.call('update_$(basename "$1")', this._id, updated_$(basename "$1"));
+        Router.go('$(basename "$1")');
+
+"
+
+    tpl_edit+="${tpl_mid}"
+    tpl_edit+="${tpl_end}"
+    echo "${tpl_edit}" > "client/views/$1/edit_$(basename "$1").js"
+}
+#------------------------------------------------------------------------------#
+# creates a series of methods for a given scaffold
+# params: collection's name
+# remarks: this function assumes that the caller function do_scaffold has checked
+# for any pitfalls
+function scaffold_method
+{
+    scaffold_method_insert "$1"
+    scaffold_method_delete "$1"
+    scaffold_method_update "$1"
+}
+#------------------------------------------------------------------------------#
+# creates a save method for a given collection name
+# params: collection's name
+function scaffold_method_insert
+{
+    local pattern="Meteor.methods"
+    local tpl="\\    insert_$(basename "$1"): function(object_$(basename "$1")) { \\
+        var $(basename "$1")Id = $(basename "$1").insert(object_$(basename "$1")); \\
+        return $(basename "$1")Id; \\
+    },"
+
+    sed -i "/$pattern/a $tpl\ " "server/methods.js"
+    sed -i "/$pattern/a \ " "server/methods.js"
+}
+# creates an update method for a given collection name
+# params: collection's name
+function scaffold_method_update
+{
+    local pattern="Meteor.methods"
+    local tpl="\\    update_$(basename "$1"): function(id, object_$(basename "$1")) { \\
+        $(basename "$1").update({_id: id}, {\$set: object_$(basename "$1") }); \\
+    },"
+
+    sed -i "/$pattern/a $tpl\ " "server/methods.js"
+    sed -i "/$pattern/a \ " "server/methods.js"
+}
+#------------------------------------------------------------------------------#
+# creates a delete method for a given collection
+# params: collection's name
+function scaffold_method_delete
+{
+    local pattern="Meteor.methods"
+    local tpl="\\    delete_$(basename "$1"): function($(basename "$1")Id) { \\
+        $(basename "$1").remove($(basename "$1")Id); \\
+    },"
+
+    sed -i "/$pattern/a $tpl\ " "server/methods.js"
+    sed -i "/$pattern/a \ " "server/methods.js"
 }
 #------------------------------------------------------------------------------#
 # Adds a new route into router.js
@@ -1088,7 +1221,7 @@ function add_route
     });"
 
         # append the template beneath the pattern
-        pattern="Router.map"
+        local pattern="Router.map"
 
         sed -i "/$pattern/a $tpl\ " "lib/router.js"
         sed -i "/$pattern/a \ " "lib/router.js"
@@ -1190,6 +1323,7 @@ function do_scaffold
                 register_subscriptions "$1"
                 scaffold_template "$1"
                 scaffold_helper "$1"
+                scaffold_method "$1"
                 colored "The scaffold for $1 has been created at client/views/$1" green
             fi
         fi
