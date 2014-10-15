@@ -231,7 +231,8 @@ function help
             colored "$1 command " white n
             colored "generates a new collection, a fixture, a view, an edit view & their helpers" magenta
             colored "Usage: \$${script} scaffold [COLLECTION_NAME] [FIELD:TYPE] [FIELD:TYPE] ..." cyan
-            colored "Available fields: string, text, number, date and boolean" cyan
+            colored "Available fields: string, text, number, date boolean, password" cyan
+            colored "url, tel, email, file, color and select" cyan
         fi
     else
         colored "${script} version: ${version}"
@@ -352,7 +353,7 @@ function fields_pairs_are_valid
             item_number=$(( item_number + 1 ))
         done
     done
-    if [ "$(( ${item_number} % 2 ))" -eq 0 ] ; then
+    if [ "$(( item_number % 2 ))" -eq 0 ] ; then
         IFS=$old_ifs
         return 0
     else
@@ -388,6 +389,20 @@ function field_types_are_valid
                     "date" )
                         break;;
                     "boolean" )
+                        break;;
+                    "password" )
+                        break;;
+                    "url" )
+                        break;;
+                    "tel" )
+                        break;;
+                    "color" )
+                        break;;
+                    "file" )
+                        break;;
+                    "select" )
+                        break;;
+                    "email" )
                         break;;
                     # if nothing matched return error
                     * )
@@ -554,7 +569,7 @@ function file_exists
 function dir_is_empty
 {
     if [[ -z $1 ]]; then
-        if find $1 -mindepth 1 -print -quit | grep -q .; then
+        if find "$1" -mindepth 1 -print -quit | grep -q .; then
             return 0
         else
             return 1
@@ -617,9 +632,26 @@ function create_fixture
                 elif [[ ${field_types[j]} = "text" ]]; then
                     val="'this is a long text ' + i"
                 elif [[ ${field_types[j]} = "date" ]]; then
-                    val=\'$(date "+%b-%d-%Y")\'
+                    # the format for the date is limited by the
+                    # w3 documentation for the date input field
+                    # http://www.w3.org/TR/html-markup/input.date.html#input.date.attrs.value
+                    val=\'$(date "+%Y-%m-%d")\'
                 elif [[ ${field_types[j]} = "boolean" ]]; then
                     val="true"
+                elif [[ ${field_types[j]} = "url" ]]; then
+                    val="'http://www.foobar.foo'"
+                elif [[ ${field_types[j]} = "tel" ]]; then
+                    val="'+00 000 000 000'"
+                elif [[ ${field_types[j]} = "email" ]]; then
+                    val="'foobar@foo.bar'"
+                elif [[ ${field_types[j]} = "color" ]]; then
+                    val="'#000000'"
+                elif [[ ${field_types[j]} = "file" ]]; then
+                    val="'some/file/path'"
+                elif [[ ${field_types[j]} = "select" ]]; then
+                    val="'Option 1'"
+                elif [[ ${field_types[j]} = "password" ]]; then
+                    val="'super_secret@!pass#'"
                 fi
                 tpl_mid+="
             ${field_names[j]}: ${val}"
@@ -651,13 +683,13 @@ function create_template
             if file_exists "client/views/$1/$1.html";then
                 colored "The template $1 allready exists." yellow
             else
-                tpl="<template name=\"$(basename $1)\">
+                tpl="<template name=\"$(basename "$1")\">
 <h3>{{name}}</h3>
 </template>"
                 # deep directory tree
                 echo "${tpl}" > "client/views/$1/$(basename "$1").html"
 
-                colored "The template $1 has been created at 'client/views/$1/$(basename $1).html'" green
+                colored "The template $1 has been created at 'client/views/$1/$(basename "$1").html'" green
             fi
         fi
     else
@@ -679,6 +711,7 @@ function scaffold_template
     scaffold_template_show "$1"
     scaffold_template_new "$1"
     scaffold_template_edit "$1"
+    scaffold_form "$1"
 }
 #------------------------------------------------------------------------------#
 # creates the main template for the scaffold
@@ -728,9 +761,9 @@ you can delete this message from the template and/or the helper</p>
     tpl_mid+="
                             <td>
                                 <a class=\"btn btn-primary btn-xs\" \
-href=\"{{pathFor 'show_$(basename "$1")'}}\">Show </a>
+href=\"{{pathFor 'show_$(basename "$1")'}}\"  id=\"show\">Show </a>
                                 <a class=\"btn btn-primary btn-xs\" \
-href=\"{{pathFor 'edit_$(basename "$1")'}}\"> Edit</a>
+href=\"{{pathFor 'edit_$(basename "$1")'}}\"  id=\"edit\"> Edit</a>
                                 <a class=\"btn btn-danger btn-xs\" \
 href=\"\" id=\"delete\">Delete</a>
                             </td>
@@ -747,12 +780,28 @@ href=\"\" id=\"delete\">Delete</a>
 # params: collection's name
 function scaffold_template_show
 {
+    local tpl_show
+    local tpl_mid
+    local tpl_end
     tpl_show="<template name=\"show_$(basename "$1")\">
-<h3>{{name}}</h3>
+    <h3>Viewing {{name}}</h3>
+    <div class=\"panel panel-default\">
+        <div class=\"panel-body\">"
 
+    tpl_end="
+        </div>
+    </div>
+    <a class=\"btn btn-default btn-xs\" href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
 </template>"
 
+    for col in ${field_names[*]}; do
+        tpl_mid+="
+                <p><strong>${col} :</strong><br>
+                {{${col}}}</p>"
+    done
 
+    tpl_show+="${tpl_mid}"
+    tpl_show+="${tpl_end}"
     echo "${tpl_show}" > "client/views/$1/show_$(basename "$1").html"
 }
 #------------------------------------------------------------------------------#
@@ -760,9 +809,11 @@ function scaffold_template_show
 # params: collection's name
 function scaffold_template_new
 {
-    tpl_new="<template name=\"new_$(basename "$1")\">
+    local tpl_new="<template name=\"new_$(basename "$1")\">
 <h3>New {{name}}</h3>
-
+{{> form_$(basename "$1")}}
+<button type=\"button\" class=\"btn btn-primary btn-xs\" id=\"save\">Save</button>
+<a class=\"btn btn-default btn-xs\"  href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
 </template>"
 
 
@@ -773,13 +824,130 @@ function scaffold_template_new
 # params: collection's name
 function scaffold_template_edit
 {
-    tpl_edit="<template name=\"edit_$(basename "$1")\">
+    local tpl_edit="<template name=\"edit_$(basename "$1")\">
 <h3>Edit {{name}}</h3>
-
+{{> form_$(basename "$1")}}
+<button type=\"button\" class=\"btn btn-primary btn-xs\" id=\"save\">Save</button>
+<a class=\"btn btn-default btn-xs\"  href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
 </template>"
 
-
     echo "${tpl_edit}" > "client/views/$1/edit_$(basename "$1").html"
+}
+# creates a common form for use in new and edit templates
+# params: collection's name
+function scaffold_form
+{
+    local tpl_form
+    local tpl_mid
+    local tpl_end
+
+    tpl_form="<template name=\"form_$(basename "$1")\">
+    <form>
+"
+
+    tpl_end="
+    </form>
+</template>"
+
+    for (( i = 0; i < ${#field_names[*]}; i++ )); do
+        tpl_mid+="
+        <div class=\"form-group\">
+            <label for=\"input_${field_names["${i}"]}\">${field_names["${i}"]}</label>"
+        if [[ ${field_types["${i}"]} == "string" ]]; then
+            tpl_mid+="
+            <input type=\"text\" class=\"form-control\"
+                placeholder=\"${field_names["${i}"]} input\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"{{${field_names["${i}"]}}}\">"
+
+        elif [[ ${field_types["${i}"]} == "text" ]]; then
+            tpl_mid+="
+            <textarea class=\"form-control\" rows=\"3\"
+                id=\"input_${field_names["${i}"]}\">{{${field_names["${i}"]}}}
+            </textarea>"
+
+        elif [[ ${field_types["${i}"]} == "number" ]]; then
+            tpl_mid+="
+            <input type=\"number\" class=\"form-control\"
+                placeholder=\"0\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"{{${field_names["${i}"]}}}\">"
+
+        elif [[ ${field_types["${i}"]} == "boolean" ]]; then
+            tpl_mid+="
+            <input type=\"checkbox\" class=\"form-control\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"{{${field_names["${i}"]}}}\">"
+
+        elif [[ ${field_types["${i}"]} == "password" ]]; then
+            tpl_mid+="
+            <input type=\"password\" class=\"form-control\"
+                placeholder=\"${field_names["${i}"]} input\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"{{${field_names["${i}"]}}}\">"
+
+        elif [[ ${field_types["${i}"]} == "date" ]]; then
+            tpl_mid+="
+            <input type=\"date\" class=\"form-control\"
+                placeholder=\"Date\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"{{${field_names["${i}"]}}}\">"
+
+        elif [[ ${field_types["${i}"]} == "url" ]]; then
+            tpl_mid+="
+            <input type=\"url\" class=\"form-control\"
+                placeholder=\"http://www.foobar.foo\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"{{${field_names["${i}"]}}}\">"
+
+        elif [[ ${field_types["${i}"]} == "email" ]]; then
+            tpl_mid+="
+            <input type=\"email\" class=\"form-control\"
+                placeholder=\"foo@foobar.bar\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"{{${field_names["${i}"]}}}\">"
+
+        elif [[ ${field_types["${i}"]} == "tel" ]]; then
+            tpl_mid+="
+            <input type=\"tel\" class=\"form-control\"
+                placeholder=\"+00 000 000 000\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"{{${field_names["${i}"]}}}\">"
+
+        elif [[ ${field_types["${i}"]} == "color" ]]; then
+            tpl_mid+="
+            <input type=\"color\" class=\"form-control\"
+                placeholder=\"#000000\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"{{${field_names["${i}"]}}}\">"
+
+        elif [[ ${field_types["${i}"]} == "file" ]]; then
+            tpl_mid+="
+            <input type=\"file\" class=\"form-control\"
+                id=\"input_${field_names["${i}"]}\"
+                value=\"\">"
+
+        elif [[ ${field_types["${i}"]} == "select" ]]; then
+            tpl_mid+="
+            <select class=\"form-control\" id=\"select_${field_names["${i}"]}\">"
+            for j in {1..5}; do
+                tpl_mid+="
+                <option selected=\"{{selected_${field_names["${i}"]}}}\">
+                    ${field_names["${i}"]} ${j}
+                </option>"
+            done
+            tpl_mid+="
+            </select>"
+        fi
+
+
+        tpl_mid+="
+        </div>"
+    done # form groups loop
+
+    tpl_form+="${tpl_mid}"
+    tpl_form+="${tpl_end}"
+    echo "${tpl_form}" > "client/views/$1/form_$(basename "$1").html"
 }
 #------------------------------------------------------------------------------#
 # Creates a new helper
@@ -795,7 +963,7 @@ function create_helper
                 colored "The helper $1 allready exists" yellow
             else
 
-                tpl="Template.$(basename "$1").helpers ({
+                local tpl="Template.$(basename "$1").helpers ({
 
     // controllers
     name: function() {
@@ -830,17 +998,18 @@ Template.$(basename "$1").events ({
 function scaffold_helper
 {
     scaffold_helper_index "$1"
+    scaffold_helper_show "$1"
 }
 #------------------------------------------------------------------------------#
 # creates the helper for the main (index) page of the scaffold
 # params: collection's name
 function scaffold_helper_index
 {
-    tpl="Template.$(basename "$1").helpers ({
+    local tpl="Template.$(basename "$1").helpers ({
 
     // controllers
     tpl_info: function() {
-        return 'This is $(basename "$1") template, find me at client/views/$1'
+        return 'This is $(basename "$1") template, find me at client/views/$1';
     },
 
     $(basename "$1"): function() {
@@ -866,7 +1035,27 @@ Template.$(basename "$1").events ({
 # params: collection's name
 function scaffold_helper_show
 {
-:
+    local tpl="Template.show_$(basename "$1").helpers ({
+
+    // controllers
+    //$(basename "$1"): function() {
+        //
+    //}
+
+});
+
+Template.show_$(basename "$1").events ({
+
+    // event handlers
+    // delete the selected object
+    //'click #something': function(evt, tpl) {
+        //
+    //}
+
+});
+"
+
+    echo "${tpl}" > "client/views/$1/show_$(basename "$1").js"
 }
 #------------------------------------------------------------------------------#
 # creates a helper for the new template for a single document in a collection
@@ -882,7 +1071,6 @@ function scaffold_helper_edit
 {
 :
 }
-# TODO: add scaffold methods
 #------------------------------------------------------------------------------#
 # Adds a new route into router.js
 # params: view's name
@@ -895,7 +1083,7 @@ function add_route
     else
         # if is a simple view creation
         # show all documents in collection
-        tpl="\\    this.route('$(basename "$1")', { \\
+        local tpl="\\    this.route('$(basename "$1")', { \\
         path: '/$1/' \\
     });"
 
@@ -910,21 +1098,23 @@ function add_route
             if [[ $2 = "scaffold" ]]; then
                 # creates view single document, edit, new urls
                 # edit a document by id
-                tpl_edit="\\    this.route('edit_$(basename "$1")', { \\
-        path: '/$1/:_id/edit/' \\
+                local tpl_edit="\\    this.route('edit_$(basename "$1")', { \\
+        path: '/$1/:_id/edit/', \\
+        data: function() { return $(basename "$1").findOne(this.params._id); } \\
     });"
                 sed -i "/$pattern/a $tpl_edit\ " "lib/router.js"
                 sed -i "/$pattern/a \ " "lib/router.js"
             #------------------------------------------------------------------#
                 # view a document by id
-                tpl_show="\\    this.route('show_$(basename "$1")', { \\
-        path: '/$1/:_id/' \\
+                local tpl_show="\\    this.route('show_$(basename "$1")', { \\
+        path: '/$1/:_id/', \\
+        data: function() { return $(basename "$1").findOne(this.params._id); } \\
     });"
                 sed -i "/$pattern/a $tpl_show\ " "lib/router.js"
                 sed -i "/$pattern/a \ " "lib/router.js"
             #------------------------------------------------------------------#
                 # new document
-                tpl_new="\\    this.route('new_$(basename "$1")', { \\
+                local tpl_new="\\    this.route('new_$(basename "$1")', { \\
         path: '/$1/new/' \\
     });"
                 sed -i "/$pattern/a $tpl_new\ " "lib/router.js"
@@ -964,10 +1154,10 @@ function create_view
 function register_subscriptions
 {
     if [[ ! -z "$1" ]]; then
-        tpl_sub="
+        local tpl_sub="
 Meteor.subscribe('$(basename "$1")');"
 
-        tpl_pub="
+        local tpl_pub="
 Meteor.publish('$(basename "$1")', function(){
     return $(basename "$1").find();
 });"
