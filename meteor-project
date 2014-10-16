@@ -60,7 +60,7 @@ Template.main.helpers ({
 
 # head
 HEAD="<head>
-<title>${PROJECT_NAME}</title>
+<title>PROJECT_NAME_HERE</title>
 </head>"
 
 LINKS="<template name=\"site_links\">
@@ -79,7 +79,7 @@ HEADER="<template name=\"header\">
                     <span class=\"icon-bar\"></span>
                     <span class=\"icon-bar\"></span>
                 </button>
-                <a class=\"navbar-brand\" >${PROJECT_NAME}</a>
+                <a class=\"navbar-brand\" >PROJECT_NAME_HERE</a>
             </div>
             <div class=\"collapse navbar-collapse\">
                 <ul class=\"nav navbar-nav\">
@@ -150,6 +150,16 @@ code {
 # router.js basic contents
 ROUTER="Router.configure({
   layoutTemplate: 'main'
+});
+
+Router.onAfterAction(function() {
+    var projectName='PROJECT_NAME_HERE';
+    if (this.route.name !== \"index\"){
+        document.title = projectName + ' | ' + this.route.name.replace('_', ' ');
+    }
+    else {
+        document.title = projectName;
+    }
 });
 
 Router.map(function () {
@@ -482,7 +492,7 @@ function install_packages
 function create_project_root_dirs
 {
     # project's root directories
-    colored "Creating root directories" yellow
+    colored "Creating project's root directories" yellow
     for directory in ${ROOT_DIRECTORIES}; do
         mkdir "${directory}"
     done
@@ -493,7 +503,7 @@ function create_project_root_dirs
 # creates project's root files
 function create_project_root_files
 {
-    colored "Creating root various files" yellow
+    colored "Creating project's root files" yellow
     # additonal top level gitignore for editors - IDEs
     echo "${GIT_IGNORE}" > .gitignore
 
@@ -531,6 +541,11 @@ function create_client_files
     echo "${SUBSCRIPTIONS}" > "client/lib/subscriptions.js"
     echo "${MAIN_HELPER}" > "client/views/layout/main.js"
 
+    # replace placeholders in layout templates with the actual
+    # project name
+    sed -i "s/PROJECT_NAME_HERE/${PROJECT_NAME}/g" "client/views/layout/head.html"
+    sed -i "s/PROJECT_NAME_HERE/${PROJECT_NAME}/g" "client/views/layout/header.html"
+    sed -i "s/PROJECT_NAME_HERE/${PROJECT_NAME}/g" "lib/router.js"
     colored "All client's files have been created" green
 }
 #------------------------------------------------------------------------------#
