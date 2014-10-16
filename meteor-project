@@ -63,6 +63,10 @@ HEAD="<head>
 <title>${PROJECT_NAME}</title>
 </head>"
 
+LINKS="<template name=\"site_links\">
+
+</template>"
+
 # header.html
 HEADER="<template name=\"header\">
     <!--bootstrap related classes delete otherwise-->
@@ -81,6 +85,7 @@ HEADER="<template name=\"header\">
                 <ul class=\"nav navbar-nav\">
                     <li class=\"active\"><a href=\"{{pathFor 'index'}}\">Home</a></li>
                     <li><a href=\"#about\">About</a></li>
+                    {{> site_links}}
                     <!--{{> loginButtons}} if accounts-password meteor package is used-->
                 </ul>
             </div><!--/.nav-collapse -->
@@ -212,32 +217,39 @@ function help
     colored "--------------------------------------------------------------------------------" blue
     if [[ ! -z $1 ]]; then
         if [[ $1 = "project" ]]; then
-            colored "$1 command " white n
-            colored "creates a new Meteor project" magenta
-            colored "Usage: \$${script} project [PROJECT_NAME]" cyan
+            colored "$1 command " magenta n
+            colored "creates a new Meteor project" cyan
+            colored "Usage: \$${script} project [PROJECT_NAME]" cyan n
+            colored " OR " magenta
+            colored "\$${script} [project_name] packages [package_name] [package_name] ..."
         elif [[ $1 = "new" ]]; then
-            colored "$1 command " white n
+            colored "$1 command " magenta n
             colored "generates a view or collection" magenta
             colored "type: \$${script} new view or \$${script} new collection" cyan
         elif [[ $1 = "new view" ]]; then
-            colored "$1 command " white n
-            colored "generates a new view (a template, a helper and a route)" magenta
+            colored "$1 command " magenta n
+            colored "generates a new view (a template, a helper and a route)" cyan
             colored "Usage: \$${script} new view [VIEW_NAME]" cyan
         elif [[ $1 = "new collection" ]]; then
-            colored "$1 command " white n
-            colored "generates a new collection" magenta
+            colored "$1 command " magenta n
+            colored "generates a new collection" cyan
             colored "Usage: \$${script} new collection [COLLECTION_NAME]" cyan
         elif [[ $1 = "scaffold" ]]; then
-            colored "$1 command " white n
-            colored "generates a new collection, a fixture, a view, an edit view & their helpers" magenta
+            colored "$1 command " magenta n
+            colored "generates a new collection, a fixture, a view, an edit view & their helpers" cyan
             colored "Usage: \$${script} scaffold [COLLECTION_NAME] [FIELD:TYPE] [FIELD:TYPE] ..." cyan
             colored "Available fields: string, text, number, date boolean, password" cyan
             colored "url, tel, email, file, color and select" cyan
+        elif [[ $1 = "create links" ]]; then
+            colored "$1 command" magenta n
+            colored "generates links for all the views in the project" cyan
+            colored "Usage: \$${script} links" cyan
         fi
     else
-        colored "${script} version: ${version}"
-        colored "A script to create Meteor projects, views, collections and scaffolds"
-        colored "Available commands: project, new view, new collection, scaffold" magenta
+        colored "${script} version: ${version}" magenta
+        colored "A tool to create Meteor projects, views, collections and scaffolds" cyan
+        colored "Available commands: project, new view, new collection, scaffold, links" cyan
+        colored "All commands must be invoked from project's root directory" cyan
     fi
     colored "--------------------------------------------------------------------------------" blue
 }
@@ -255,8 +267,7 @@ function user_input
     elif [[ "$1" = "project" ]]; then
         if [[ -z "$2" ]]; then
             colored "Error: project name is missing" red
-            colored "Usage: \$${script} project [project_name] or" cyan
-            colored "project \$${script} [project_name] packages [package_name] [package_name] ..." cyan
+            help "project"
         else
             eval PROJECT_NAME="$2"
 
@@ -278,7 +289,7 @@ function user_input
                 done
             fi
             install_packages
-            echo "removing autopublish package since subscriptions are being automatically created"
+            colored "removing autopublish package since subscriptions are being automatically created" yellow
             meteor remove autopublish
             colored "cd into project ${PROJECT_NAME} to start working" yellow
         fi
@@ -331,7 +342,8 @@ function user_input
             colored "Error: collection (model) name is missing" red
             help "scaffold"
         fi
-
+    elif [[ "$1" = "links" ]]; then
+        create_links
     else
         colored "Error unknown command" red
         help ""
@@ -442,7 +454,7 @@ function pack_fields
 # creates a Meteor project
 function create_project
 {
-    echo "Creating project: ${PROJECT_NAME}"
+    colored "Creating project: ${PROJECT_NAME}" yellow
     # create project
     meteor create "${PROJECT_NAME}" >/dev/null
 
@@ -457,7 +469,7 @@ function create_project
 function install_packages
 {
     if [[ -n "${PACKAGES[*]}" ]]; then
-        echo "Installing packages:"
+        colored "Installing packages:" yellow
         colored "${PACKAGES[*]}" yellow
         for package in ${PACKAGES[*]}; do
             meteor add "${package}"
@@ -470,7 +482,7 @@ function install_packages
 function create_project_root_dirs
 {
     # project's root directories
-    echo "Creating root directories"
+    colored "Creating root directories" yellow
     for directory in ${ROOT_DIRECTORIES}; do
         mkdir "${directory}"
     done
@@ -481,7 +493,7 @@ function create_project_root_dirs
 # creates project's root files
 function create_project_root_files
 {
-    echo "Creating root various files"
+    colored "Creating root various files" yellow
     # additonal top level gitignore for editors - IDEs
     echo "${GIT_IGNORE}" > .gitignore
 
@@ -493,7 +505,7 @@ function create_project_root_files
 # creates client's directory structure
 function create_client_dirs
 {
-    echo "Creating client's directory structure"
+    colored "Creating client's directory structure" yellow
     for directory in ${CLIENT_DIRECTORIES};do
         mkdir "client/${directory}"
     done
@@ -503,12 +515,13 @@ function create_client_dirs
 # creates client's files
 function create_client_files
 {
-    echo "Creating client files"
+    colored "Creating client files" yellow
     echo "${INDEX}" > "client/views/index.html"
     echo "${MAIN}" > "client/views/layout/main.html"
     echo "${HEADER}" > "client/views/layout/header.html"
     echo "${FOOTER}" > "client/views/layout/footer.html"
     echo "${HEAD}" > "client/views/layout/head.html"
+    echo "${LINKS}" > "client/views/layout/site_links.html"
 
     for file in ${CLIENT_STYLESHEETS};do
         touch "${file}"
@@ -524,7 +537,7 @@ function create_client_files
 # creates server's files
 function create_server_files
 {
-    echo "Creating server files"
+    colored "Creating server files" yellow
     echo "${METHODS}" > "server/methods.js"
     echo "${PUBLICATIONS}" > "server/publications.js"
     echo "${FIXTURES}" > "server/fixtures.js"
@@ -586,14 +599,14 @@ function create_collection
             colored "Error: collection name is missing" red
             colored "Usage: \$${script} new model [model name]" cyan
         else
-            if file_exists "collections/$1.js";then
-                colored "The collection $1 allready exists!" yellow
+            if file_exists "collections/$(basename "$1").js";then
+                colored "The collection $1 allready exists!" red
             else
-                tpl="$1 = new Meteor.Collection('$1');"
+                tpl="$(basename "$1") = new Meteor.Collection('$(basename "$1")');"
 
-                echo "${tpl}" > "collections/$1.js"
+                echo "${tpl}" > "collections/$(basename "$1").js"
 
-                colored "The collection $1 has been created at collections/$1.js" green
+                colored "The collection $1 has been created at collections/$(basename "$1").js" green
             fi
         fi
     else
@@ -681,7 +694,7 @@ function create_template
             colored "Usage: \$${script} new template [template name]" cyan
         else
             if file_exists "client/views/$1/$1.html";then
-                colored "The template $1 allready exists." yellow
+                colored "The template $1 allready exists." red
             else
                 tpl="<template name=\"$(basename "$1")\">
 <h3>$(basename "$1")</h3>
@@ -1276,6 +1289,60 @@ function create_view
                 colored "and registered as route /$1/" green
             fi
         fi
+    else
+        colored "Error: not valid Meteor project directory" red
+        colored "This command must be called from project's root directory" cyan
+    fi
+}
+# generates links and link hierarchies for all views
+function create_links
+{
+    local tpl_links="<template name=\"site_links\">
+    <li class=\"dropdown\">
+        <a href=\"\" class=\"dropdown-toggle\"
+                data-toggle=\"dropdown\">Views <span class=\"caret\"></span></a>
+            <ul class=\"dropdown-menu\" role=\"menu\">"
+    local tpl_mid
+    local tpl_end="
+            </ul>
+    </li>
+</template>"
+
+    if in_project_dir; then
+        # get all subdirectories inside client's views
+        root_dirs=$(cd client/views/; find . -maxdepth 1  -type d)
+        for dir in ${root_dirs}; do
+            if [[ "${dir}" != "./layout" ]] && [[ "${dir}" != "." ]]; then
+                subdircount=$(cd "client/views/${dir}"; find . -maxdepth 1 -type d | wc -l)
+                # check if the directory contains template files
+                # else do not include it in site links
+                dirfilecount=$(cd "client/views/${dir}"; find . -maxdepth 1 -type f | wc -l)
+                if (( dirfilecount > 0 )); then
+                    if (( subdircount >= 1 ));then
+                        tpl_mid+="
+                        <li><a href=\"{{pathFor '$(basename "${dir}")'}}\">$(basename "${dir}")</a></li>"
+                    else
+                        tpl_mid+="
+                        <li class=\"divider\"></li>"
+                        tpl_mid+="
+                        <li><a href=\"{{pathFor '$(basename "${dir}")'}}\">$(basename "${dir}")</a></li>"
+                    fi
+                fi
+                childs=$(cd "client/views/${dir}"; find . -type d)
+                for child in ${childs}; do
+                    if [[ "${child}" != "." ]];then
+                      tpl_mid+="
+                    <li><a href=\"{{pathFor '$(basename "${child}")'}}\">$(basename "${child}")</a></li>"
+                    fi
+                done
+            fi
+        done
+
+        tpl_links+="${tpl_mid}"
+        tpl_links+="${tpl_end}"
+
+        echo "${tpl_links}" > "client/views/layout/site_links.html"
+
     else
         colored "Error: not valid Meteor project directory" red
         colored "This command must be called from project's root directory" cyan
