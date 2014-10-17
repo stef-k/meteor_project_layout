@@ -1,8 +1,11 @@
 ## A bash script to create directory structures for new Meteor projects
 
+Tested on Ubuntu 14.04 64 bit with **bash** not **sh** version:
+`GNU bash, version 4.3.11(1)-release (x86_64-pc-linux-gnu)`
+
 ### Usage - 'installation':
 
-1. Place the script in your $PATH
+1. Place the script in your $PATH or source it so you can call it from terminal
 2. Make it executable with `chmod +x meteor-project`
 
 #### New project
@@ -21,7 +24,7 @@ where `PROJECT_NAME` type the name of your project.
 $meteor-project project PROJECT_NAME packages [PACKAGE_NAME] [PACKAGE_NAME] ...
 ```
 
-additionally download and install all [PACKAGE_NAME] given as arguments.
+additionally download and install all [PACKAGE_NAME]s given as arguments.
 
 **note:** 
 * the `package` keyword
@@ -37,7 +40,11 @@ PACKAGES=("iron:router" "mizzao:bootstrap-3")
 
 #### New view
 
-During view creation a new directory is created at `client/views/`, a new template and a new helper, finally a route is register at `lib/router.js`
+During view creation, the following are being created:
+ * a new directory at `client/views/VIEW_NAME` (according to user's input)
+ * a new template named as VIEW_NAME (according to user's input)
+ * a new helper (according to user's input)
+ * a route is register at `lib/router.js` (according to user's input)
 
 ```bash
 $meteor-project new view VIEW_NAME
@@ -49,7 +56,7 @@ where `VIEW_NAME` the name of the view to be created
 
 #### New collection
 
-Creates a new collection at `collections/` directory
+Creates a new collection at `collections/` directory and a fixture in server's directory
 
 ```bash
 $meteor-project new collection COLLECTION_NAME
@@ -58,6 +65,27 @@ $meteor-project new collection COLLECTION_NAME
 where `COLLECTION_NAME`, the name of the collection to be created
 
 **note** the `new` and `collection` keywords
+
+#### Scaffold
+
+Creates CRUD views and their respective collection's and fixtures
+
+```bash
+$meteor-project scaffold NAME
+```
+
+where `NAME` the name of the CRUD
+
+
+#### Links
+
+Generates a links menu in navbar containing all views currently located in client/views/
+
+```bash
+$meteor-project links
+```
+
+**note** the command can be invoked multiple times as it re-generates the links menu.
 
 
 ### INFO
@@ -92,11 +120,4 @@ new_meteor_project/
 
 10 directories, 13 files
 
-```
-
-Also the script installs the Iron Router and the Bootstrap 3 packages using:
-
-```bash
-meteor add iron:router
-meteor add mizzao:bootstrap-3
 ```

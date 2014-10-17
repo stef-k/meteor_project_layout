@@ -321,8 +321,8 @@ function user_input
                         colored "Error: collection name is missing" red
                         help "new collection"
                     else
-                        create_collection "$3"
-                        create_fixture "$3"
+                        create_collection "$3" && \
+                        create_fixture "$3" && \
                         register_subscriptions "$3"
                     fi
 
@@ -541,8 +541,7 @@ function create_client_files
     echo "${SUBSCRIPTIONS}" > "client/lib/subscriptions.js"
     echo "${MAIN_HELPER}" > "client/views/layout/main.js"
 
-    # replace placeholders in layout templates with the actual
-    # project name
+    # replace placeholders in  templates with the actual project name
     sed -i "s/PROJECT_NAME_HERE/${PROJECT_NAME}/g" "client/views/layout/head.html"
     sed -i "s/PROJECT_NAME_HERE/${PROJECT_NAME}/g" "client/views/layout/header.html"
     sed -i "s/PROJECT_NAME_HERE/${PROJECT_NAME}/g" "lib/router.js"
@@ -617,6 +616,7 @@ function create_collection
         else
             if file_exists "collections/$(basename "$1").js";then
                 colored "The collection $1 allready exists!" red
+                return 1
             else
                 tpl="$(basename "$1") = new Meteor.Collection('$(basename "$1")');"
 
@@ -628,6 +628,7 @@ function create_collection
     else
         colored "Error: not valid Meteor project directory" red
         colored "This command must be called from project's root directory" cyan
+        return 1
     fi
 }
 #------------------------------------------------------------------------------#
@@ -711,6 +712,7 @@ function create_template
         else
             if file_exists "client/views/$1/$1.html";then
                 colored "The template $1 allready exists." red
+                return 1
             else
                 tpl="<template name=\"$(basename "$1")\">
 <h3>$(basename "$1")</h3>
@@ -719,11 +721,13 @@ function create_template
                 echo "${tpl}" > "client/views/$1/$(basename "$1").html"
 
                 colored "The template $1 has been created at 'client/views/$1/$(basename "$1").html'" green
+                return 0
             fi
         fi
     else
         colored "Error: not valid Meteor project directory" red
         colored "This command must be called from project's root directory" cyan
+        return 1
     fi
 }
 # creates templates for scaffolded collections
@@ -987,9 +991,11 @@ function create_helper
         if [[ -z "$1" ]]; then
             colored "Error: helper name is missing" red
             colored "Usage: \$${script} new helper [helper name] <-- must match with a view name" cyan
+            return 1
         else
             if file_exists "client/views/$1/$1.js";then
-                colored "The helper $1 allready exists" yellow
+                colored "The helper $1 allready exists" red
+                return 1
             else
 
                 local tpl="Template.$(basename "$1").helpers ({
@@ -1012,11 +1018,13 @@ Template.$(basename "$1").events ({
 "
                 echo "${tpl}" > "client/views/$1/$(basename "$1").js"
                 colored "The template helper $1 has been created at client/views/$1/$(basename "$1").js" green
+                return 0
             fi
         fi
     else
         colored "Error: not valid Meteor project directory" red
         colored "This command must be called from project's root directory" cyan
+        return 1
     fi
 }
 #------------------------------------------------------------------------------#
@@ -1327,32 +1335,6 @@ function create_links
     if in_project_dir; then
         # get all subdirectories inside client's views
         root_dirs=$(cd client/views/; find . -maxdepth 1 -not -iname ".*" -type d)
-        # for dir in ${root_dirs}; do
-        #     if [[ "${dir}" != "./layout" ]]; then
-        #         subdircount=$(cd "client/views/${dir}"; find . -maxdepth 1 -not -iname ".*" -type d | wc -l)
-        #         # check if the directory contains template files
-        #         # else do not include it in site links
-        #         if ! dir_contains_templates "client/views/$(basename "${dir}")"; then
-        #             if (( subdircount >= 1 ));then
-        #                 tpl_mid+="
-        #                 <li><a href=\"{{pathFor '$(basename "${dir}")'}}\">$(basename "${dir}")</a></li>"
-        #             else
-        #                 tpl_mid+="
-        #                 <li class=\"divider\"></li>"
-        #                 tpl_mid+="
-        #                 <li><a href=\"{{pathFor '$(basename "${dir}")'}}\">$(basename "${dir}")</a></li>"
-        #             fi
-        #         fi
-                # childs=$(cd "client/views/${dir}"; find . -not -iname ".*" -type d)
-                # for child in ${childs}; do
-                #         echo "TEST--->>> ${child}"
-                #         if ! dir_contains_templates "client/views/$(basename "${dir}")/$(basename "${child}")"; then
-                #             tpl_mid+="
-                #     <li><a href=\"{{pathFor '$(basename "${child}")'}}\">$(basename "${child}")</a></li>"
-                #         fi
-                # done
-            # fi
-        # done
         for dir in $(find "client/views/" -not -iname ".*" -not -iname "layout" -not -name "index.html" -type d);do
             if dir_contains_templates "${dir}" == 1; then
                 tpl_mid+="
@@ -1363,10 +1345,11 @@ function create_links
         tpl_links+="${tpl_end}"
 
         echo "${tpl_links}" > "client/views/layout/site_links.html"
-
+        return 0
     else
         colored "Error: not valid Meteor project directory" red
         colored "This command must be called from project's root directory" cyan
+        return 1
     fi
 }
 # registers each a new collection to server's publications and
@@ -1385,6 +1368,9 @@ Meteor.publish('$(basename "$1")', function(){
 
         echo "${tpl_sub}" >> "client/lib/subscriptions.js"
         echo "${tpl_pub}" >> "server/publications.js"
+        return 0
+    else
+        return 1
     fi
 }
 
@@ -1400,9 +1386,11 @@ function do_scaffold
         if [[ -z $1 ]]; then
             colored "Error: view name is missing" red
             colored "Usage: \$${script} new [view name]" cyan
+            return 1
         else
             if dir_exists "client/views/$1" && dir_contains_templates "client/views/$1";then
                 colored "Error: The view $1 allready exists!" red
+                return 1
             else
                 # scaffold here
                 create_collection "$1" > /dev/null
@@ -1413,11 +1401,13 @@ function do_scaffold
                 scaffold_helper "$1"
                 scaffold_method "$1"
                 colored "The scaffold for $1 has been created at client/views/$1" green
+                return 0
             fi
         fi
     else
         colored "Error: not valid Meteor project directory" red
         colored "This command must be called from project's root directory" cyan
+        return 1
     fi
 }
 #------------------------------------------------------------------------------#
