@@ -155,7 +155,7 @@ ROUTER="Router.configure({
 Router.onAfterAction(function() {
     var projectName='PROJECT_NAME_HERE';
     if (this.route.name !== \"index\"){
-        document.title = projectName + ' | ' + this.route.name.replace('_', ' ');
+        document.title = projectName + ' | ' + this.route.name.replace(/_/g, ' ');
     }
     else {
         document.title = projectName;
@@ -571,8 +571,8 @@ function in_project_dir
     fi
 }
 #------------------------------------------------------------------------------#
-# checks if a file exists
-# returns: true if file exists, false otherwise
+# checks if a directory exists
+# returns: true if directory exists, false otherwise
 function dir_exists
 {
     if [[ -d "$1" ]]; then
@@ -591,13 +591,14 @@ function file_exists
     fi
 }
 #------------------------------------------------------------------------------#
-# check if a directory is empty
+# check if a directory contains template files (except index.html)
 # params: directory path
-# returns: true if is empty, false otherwise
-function dir_is_empty
+# returns: true if is contains tempates, false otherwise
+function dir_contains_templates
 {
-    if [[ -z $1 ]]; then
-        if find "$1" -mindepth 1 -print -quit | grep -q .; then
+    if [[ -n "$1" ]]; then
+        local found=$(find "$1/" -maxdepth 1 -not -name "index.html" -name "*.html" | wc -l)
+        if (( found > 0 )); then
             return 0
         else
             return 1
@@ -1293,7 +1294,7 @@ function create_view
             colored "Error: view name is missing" red
             colored "Usage: \$${script} new [view name]" cyan
         else
-            if dir_exists "client/views/$1";then
+            if dir_exists "client/views/$1" && dir_contains_templates "client/views/$1";then
                 colored "Error: The view $1 allready exists!" red
             else
                 mkdir -p "client/views/$1"
@@ -1325,34 +1326,39 @@ function create_links
 
     if in_project_dir; then
         # get all subdirectories inside client's views
-        root_dirs=$(cd client/views/; find . -maxdepth 1  -type d)
-        for dir in ${root_dirs}; do
-            if [[ "${dir}" != "./layout" ]] && [[ "${dir}" != "." ]]; then
-                subdircount=$(cd "client/views/${dir}"; find . -maxdepth 1 -type d | wc -l)
-                # check if the directory contains template files
-                # else do not include it in site links
-                dirfilecount=$(cd "client/views/${dir}"; find . -maxdepth 1 -type f | wc -l)
-                if (( dirfilecount > 0 )); then
-                    if (( subdircount >= 1 ));then
-                        tpl_mid+="
-                        <li><a href=\"{{pathFor '$(basename "${dir}")'}}\">$(basename "${dir}")</a></li>"
-                    else
-                        tpl_mid+="
-                        <li class=\"divider\"></li>"
-                        tpl_mid+="
-                        <li><a href=\"{{pathFor '$(basename "${dir}")'}}\">$(basename "${dir}")</a></li>"
-                    fi
-                fi
-                childs=$(cd "client/views/${dir}"; find . -type d)
-                for child in ${childs}; do
-                    if [[ "${child}" != "." ]];then
-                      tpl_mid+="
-                    <li><a href=\"{{pathFor '$(basename "${child}")'}}\">$(basename "${child}")</a></li>"
-                    fi
-                done
+        root_dirs=$(cd client/views/; find . -maxdepth 1 -not -iname ".*" -type d)
+        # for dir in ${root_dirs}; do
+        #     if [[ "${dir}" != "./layout" ]]; then
+        #         subdircount=$(cd "client/views/${dir}"; find . -maxdepth 1 -not -iname ".*" -type d | wc -l)
+        #         # check if the directory contains template files
+        #         # else do not include it in site links
+        #         if ! dir_contains_templates "client/views/$(basename "${dir}")"; then
+        #             if (( subdircount >= 1 ));then
+        #                 tpl_mid+="
+        #                 <li><a href=\"{{pathFor '$(basename "${dir}")'}}\">$(basename "${dir}")</a></li>"
+        #             else
+        #                 tpl_mid+="
+        #                 <li class=\"divider\"></li>"
+        #                 tpl_mid+="
+        #                 <li><a href=\"{{pathFor '$(basename "${dir}")'}}\">$(basename "${dir}")</a></li>"
+        #             fi
+        #         fi
+                # childs=$(cd "client/views/${dir}"; find . -not -iname ".*" -type d)
+                # for child in ${childs}; do
+                #         echo "TEST--->>> ${child}"
+                #         if ! dir_contains_templates "client/views/$(basename "${dir}")/$(basename "${child}")"; then
+                #             tpl_mid+="
+                #     <li><a href=\"{{pathFor '$(basename "${child}")'}}\">$(basename "${child}")</a></li>"
+                #         fi
+                # done
+            # fi
+        # done
+        for dir in $(find "client/views/" -not -iname ".*" -not -iname "layout" -not -name "index.html" -type d);do
+            if dir_contains_templates "${dir}" == 1; then
+                tpl_mid+="
+                <li><a href=\"{{pathFor '$(basename "${dir}")'}}\">$(basename "${dir}")</a></li>"
             fi
         done
-
         tpl_links+="${tpl_mid}"
         tpl_links+="${tpl_end}"
 
@@ -1395,7 +1401,7 @@ function do_scaffold
             colored "Error: view name is missing" red
             colored "Usage: \$${script} new [view name]" cyan
         else
-            if dir_exists "client/views/$1";then
+            if dir_exists "client/views/$1" && dir_contains_templates "client/views/$1";then
                 colored "Error: The view $1 allready exists!" red
             else
                 # scaffold here
