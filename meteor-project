@@ -231,7 +231,7 @@ function help
             colored "creates a new Meteor project" cyan
             colored "Usage: \$${script} project [PROJECT_NAME]" cyan n
             colored " OR " magenta
-            colored "\$${script} [project_name] packages [package_name] [package_name] ..."
+            colored "\$${script} [project_name] packages [package_name] [package_name] ..." cyan
         elif [[ $1 = "new" ]]; then
             colored "$1 command " magenta n
             colored "generates a view or collection" magenta
@@ -259,7 +259,7 @@ function help
         colored "${script} version: ${version}" magenta
         colored "A tool to create Meteor projects, views, collections and scaffolds" cyan
         colored "Available commands: project, new view, new collection, scaffold, links" cyan
-        colored "All commands must be invoked from project's root directory" cyan
+        colored "All commands (except project) must be invoked from project's root directory" cyan
     fi
     colored "--------------------------------------------------------------------------------" blue
 }
@@ -1011,7 +1011,7 @@ Template.$(basename "$1").events ({
 });
 "
                 echo "${tpl}" > "client/views/$1/$(basename "$1").js"
-                colored "The template $1 has been created at client/views/$1/$(basename "$1").js" green
+                colored "The template helper $1 has been created at client/views/$1/$(basename "$1").js" green
             fi
         fi
     else
