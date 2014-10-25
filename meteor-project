@@ -754,6 +754,7 @@ function scaffold_template
 function scaffold_template_index
 {
     local tpl_index="<template name=\"$(basename "$1")\">
+<div class=\"container\">
 <h3>All $(basename "$1")(s)</h3>
 <p><pre>{{tpl_info}}</pre>
 you can delete this message from the template and/or the helper</p>
@@ -767,6 +768,7 @@ you can delete this message from the template and/or the helper</p>
        </table>
     </div>
     <a class=\"btn btn-success btn-xs\" href=\"{{pathFor 'new_$(basename "$1")'}}\">New $(basename "$1")</a>
+</div>
 </template>"
     # display the main content in a table where
     # the number of columns = length of field_names array
