@@ -754,21 +754,21 @@ function scaffold_template
 function scaffold_template_index
 {
     local tpl_index="<template name=\"$(basename "$1")\">
-<div class=\"container\">
-<h3>All $(basename "$1")(s)</h3>
-<p><pre>{{tpl_info}}</pre>
-you can delete this message from the template and/or the helper</p>
-    <div class=\"table-responsive\">
-        <table class=\"table table-hover table-condensed table-bordered\">
-            <thead>
-                <tr>"
+    <div class=\"container\">
+        <h3>All $(basename "$1")(s)</h3>
+        <p><pre>{{tpl_info}}</pre>
+        you can delete this message from the template and/or the helper</p>
+            <div class=\"table-responsive\">
+                <table class=\"table table-hover table-condensed table-bordered\">
+                    <thead>
+                        <tr>"
 
     local tpl_end="
-        </tbody>
-       </table>
-    </div>
-    <a class=\"btn btn-success btn-xs\" href=\"{{pathFor 'new_$(basename "$1")'}}\">New $(basename "$1")</a>
-</div>
+                </tbody>
+               </table>
+            </div>
+            <a class=\"btn btn-success btn-xs\" href=\"{{pathFor 'new_$(basename "$1")'}}\">New $(basename "$1")</a>
+        </div>
 </template>"
     # display the main content in a table where
     # the number of columns = length of field_names array
@@ -821,20 +821,22 @@ function scaffold_template_show
     local tpl_mid
     local tpl_end
     tpl_show="<template name=\"show_$(basename "$1")\">
-    <h3>Viewing $(basename "$1")</h3>
-    <div class=\"panel panel-default\">
-        <div class=\"panel-body\">"
+    <div class=\"container\">
+        <h3>Viewing $(basename "$1")</h3>
+        <div class=\"panel panel-default\">
+            <div class=\"panel-body\">"
 
     tpl_end="
+            </div>
         </div>
+        <a class=\"btn btn-default btn-xs\" href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
     </div>
-    <a class=\"btn btn-default btn-xs\" href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
 </template>"
 
     for col in ${field_names[*]}; do
         tpl_mid+="
-                <p><strong>${col} :</strong><br>
-                {{${col}}}</p>"
+                    <p><strong>${col} :</strong><br>
+                    {{${col}}}</p>"
     done
 
     tpl_show+="${tpl_mid}"
@@ -847,10 +849,12 @@ function scaffold_template_show
 function scaffold_template_new
 {
     local tpl_new="<template name=\"new_$(basename "$1")\">
-<h3>New $(basename "$1")</h3>
-{{> form_$(basename "$1")}}
-<button type=\"button\" class=\"btn btn-primary btn-xs\" id=\"save\">Save</button>
-<a class=\"btn btn-default btn-xs\"  href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
+    <div class=\"container\">
+        <h3>New $(basename "$1")</h3>
+        {{> form_$(basename "$1")}}
+        <button type=\"button\" class=\"btn btn-primary btn-xs\" id=\"save\">Save</button>
+        <a class=\"btn btn-default btn-xs\"  href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
+    </div>
 </template>"
 
 
@@ -862,10 +866,12 @@ function scaffold_template_new
 function scaffold_template_edit
 {
     local tpl_edit="<template name=\"edit_$(basename "$1")\">
-<h3>Edit $(basename "$1")</h3>
-{{> form_$(basename "$1")}}
-<button type=\"button\" class=\"btn btn-primary btn-xs\" id=\"save\">Save</button>
-<a class=\"btn btn-default btn-xs\"  href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
+    <div class=\"container\">
+        <h3>Edit $(basename "$1")</h3>
+        {{> form_$(basename "$1")}}
+        <button type=\"button\" class=\"btn btn-primary btn-xs\" id=\"save\">Save</button>
+        <a class=\"btn btn-default btn-xs\"  href=\"{{pathFor '$(basename "$1")'}}\">Back</a>
+    </div>
 </template>"
 
     echo "${tpl_edit}" > "client/views/$1/edit_$(basename "$1").html"
