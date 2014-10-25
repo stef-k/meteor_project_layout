@@ -644,7 +644,7 @@ function create_fixture
 {
     # generate NUMBER_OF_FIXTURES
     tpl="if ($(basename "$1").find().count() === 0) {
-    for (var i=0; i < ${NUMBER_OF_FIXTURES}; i++) {
+    for (var $(basename "$1")_var = 0; $(basename "$1")_var < ${NUMBER_OF_FIXTURES}; $(basename "$1")_var++) {
         $(basename "$1").insert({"
 
     tpl_end="
@@ -695,7 +695,7 @@ function create_fixture
     # if not called during a scaffold create a simpler version
     else
         tpl_mid="
-            $(basename "$1"): '$(basename "$1") ' + i"
+            $(basename "$1"): '$(basename "$1") ' + $(basename "$1")_var"
     fi
 
     tpl+="${tpl_mid}${tpl_end}"
