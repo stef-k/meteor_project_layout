@@ -660,9 +660,9 @@ function create_fixture
                 if [[ ${field_types[j]} = "number" ]]; then
                     val="i"
                 elif [[ ${field_types[j]} = "string" ]]; then
-                    val="'short string ' + i"
+                    val="'short string ' + (basename $1)_var"
                 elif [[ ${field_types[j]} = "text" ]]; then
-                    val="'this is a long text ' + i"
+                    val="'this is a long text ' + (basename $1)_var"
                 elif [[ ${field_types[j]} = "date" ]]; then
                     # the format for the date is limited by the
                     # w3 documentation for the date input field
