@@ -1,10 +1,33 @@
 #!/usr/bin/env bash
-# Structured Meteor projects
+# The MIT License (MIT)
+#
+# Copyright (c) 2014 stef kariotidis <stef[dot]kariotidis[at]gmail[dot]com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# Structured Meteor projects generator for
+# Meteor version 1.0
 # Tested on: Ubuntu 14.04 with
 # GNU bash, version 4.3.11(1)-release (x86_64-pc-linux-gnu)
 # the name of this script
 readonly script="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
-readonly version="0.4"
+readonly version="0.5"
 ## Variables, Files - Directories
 # project's name do not edit
 PROJECT_NAME=""
@@ -37,14 +60,14 @@ INDEX="<template name=\"index\">
 
 # main.html (iron router layout)
 MAIN="<template name=\"main\">
-<body>
-{{> header}}
-<!--bootstrap container class delete otherwise-->
-<div class=\"container\">
-{{> yield}}
-</div>
-{{> footer}}
-</body>
+    <body>
+        {{> header}}
+        <!--bootstrap container class delete otherwise-->
+        <div class=\"container\">
+            {{> yield}}
+        </div>
+        {{> footer}}
+    </body>
 </template>"
 
 MAIN_HELPER="// This is the main template helper
@@ -156,21 +179,19 @@ ROUTER="Router.configure({
 
 Router.onAfterAction(function() {
     var projectName='PROJECT_NAME_HERE';
-    if (this.route.name !== \"index\"){
-        document.title = projectName + ' | ' + this.route.name.replace(/_/g, ' ');
+    if (Router.current().route.getName() !== \"index\"){
+        document.title = projectName + ' | ' + Router.current().route.getName().replace(/_/g, ' ');
     }
     else {
         document.title = projectName;
     }
 });
 
-Router.map(function () {
-
-    this.route('index', {
-        path: '/'
-    });
-
-});"
+// map the home page (index) to / path
+Router.route('index', {
+    path: '/'
+});
+"
 
 SUBSCRIPTIONS="//Meteor.subscribe('a_collection');"
 
@@ -1263,42 +1284,38 @@ function add_route
     else
         # if is a simple view creation
         # show all documents in collection
-        local tpl="\\    this.route('$(basename "$1")', { \\
-        path: '/$1/' \\
-    });"
+        local tpl="
+Router.route('$(basename "$1")', {
+    path: '/$1/'
+});"
 
-        # append the template beneath the pattern
-        local pattern="Router.map"
-
-        sed -i "/$pattern/a $tpl\ " "lib/router.js"
-        sed -i "/$pattern/a \ " "lib/router.js"
+        # append to router file
+        echo "${tpl}" >> "lib/router.js"
 
         # if we are scaffolding
-
             if [[ $2 = "scaffold" ]]; then
-                # creates view single document, edit, new urls
                 # edit a document by id
-                local tpl_edit="\\    this.route('edit_$(basename "$1")', { \\
-        path: '/$1/:_id/edit/', \\
-        data: function() { return $(basename "$1").findOne(this.params._id); } \\
-    });"
-                sed -i "/$pattern/a $tpl_edit\ " "lib/router.js"
-                sed -i "/$pattern/a \ " "lib/router.js"
-            #------------------------------------------------------------------#
+                local tpl_edit="
+Router.route('edit_$(basename "$1")', {
+    path: '/$1/:_id/edit/',
+    data: function() { return $(basename "$1").findOne(this.params._id); }
+});"
+                echo "${tpl_edit}" >> "lib/router.js"
+                #--------------------------------------------------------------#
                 # view a document by id
-                local tpl_show="\\    this.route('show_$(basename "$1")', { \\
-        path: '/$1/:_id/', \\
-        data: function() { return $(basename "$1").findOne(this.params._id); } \\
-    });"
-                sed -i "/$pattern/a $tpl_show\ " "lib/router.js"
-                sed -i "/$pattern/a \ " "lib/router.js"
-            #------------------------------------------------------------------#
+                local tpl_show="
+Router.route('show_$(basename "$1")', {
+    path: '/$1/:_id/',
+    data: function() { return $(basename "$1").findOne(this.params._id); }
+});"
+                echo "${tpl_show}" >> "lib/router.js"
+                #--------------------------------------------------------------#
                 # new document
-                local tpl_new="\\    this.route('new_$(basename "$1")', { \\
-        path: '/$1/new/' \\
-    });"
-                sed -i "/$pattern/a $tpl_new\ " "lib/router.js"
-                sed -i "/$pattern/a \ " "lib/router.js"
+                local tpl_new="
+Router.route('new_$(basename "$1")', {
+    path: '/$1/new/'
+});"
+                echo "${tpl_new}" >> "lib/router.js"
         fi
     fi
 }
