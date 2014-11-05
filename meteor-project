@@ -180,7 +180,8 @@ ROUTER="Router.configure({
 Router.onAfterAction(function() {
     var projectName='PROJECT_NAME_HERE';
     if (Router.current().route.getName() !== \"index\"){
-        document.title = projectName + ' | ' + Router.current().route.getName().replace(/_/g, ' ');
+        document.title = projectName + ' | ' +
+            Router.current().route.getName().replace(/_/g, ' ');
     }
     else {
         document.title = projectName;
@@ -665,7 +666,7 @@ function create_fixture
 {
     # generate NUMBER_OF_FIXTURES
     tpl="if ($(basename "$1").find().count() === 0) {
-    for (var $(basename "$1")_var = 0; $(basename "$1")_var < ${NUMBER_OF_FIXTURES}; $(basename "$1")_var++) {
+    for (var $(basename "$1")_index = 0; $(basename "$1")_index < ${NUMBER_OF_FIXTURES}; $(basename "$1")_index++) {
         $(basename "$1").insert({"
 
     tpl_end="
@@ -679,11 +680,11 @@ function create_fixture
                 # generate a field value according to it's type
                 local val
                 if [[ ${field_types[j]} = "number" ]]; then
-                    val="i"
+                    val="$(basename $1)_index"
                 elif [[ ${field_types[j]} = "string" ]]; then
-                    val="'short string ' + (basename $1)_var"
+                    val="'short string ' + $(basename $1)_index"
                 elif [[ ${field_types[j]} = "text" ]]; then
-                    val="'this is a long text ' + (basename $1)_var"
+                    val="'this is a long text ' + $(basename $1)_index"
                 elif [[ ${field_types[j]} = "date" ]]; then
                     # the format for the date is limited by the
                     # w3 documentation for the date input field
@@ -716,7 +717,7 @@ function create_fixture
     # if not called during a scaffold create a simpler version
     else
         tpl_mid="
-            $(basename "$1"): '$(basename "$1") ' + $(basename "$1")_var"
+            $(basename "$1"): '$(basename "$1") ' + $(basename "$1")_index"
     fi
 
     tpl+="${tpl_mid}${tpl_end}"
@@ -906,8 +907,7 @@ function scaffold_form
     local tpl_end
 
     tpl_form="<template name=\"form_$(basename "$1")\">
-    <form>
-"
+    <form>"
 
     tpl_end="
     </form>
@@ -1286,7 +1286,8 @@ function add_route
         # show all documents in collection
         local tpl="
 Router.route('$(basename "$1")', {
-    path: '/$1/'
+    path: '/$1/',
+    template: '$(basename "$1")'
 });"
 
         # append to router file
@@ -1294,10 +1295,20 @@ Router.route('$(basename "$1")', {
 
         # if we are scaffolding
             if [[ $2 = "scaffold" ]]; then
+                #--------------------------------------------------------------#
+                # new document
+                local tpl_new="
+Router.route('new_$(basename "$1")', {
+    path: '/$1/new/',
+    template: 'new_$(basename "$1")'
+});"
+                echo "${tpl_new}" >> "lib/router.js"
+                #--------------------------------------------------------------#
                 # edit a document by id
                 local tpl_edit="
 Router.route('edit_$(basename "$1")', {
     path: '/$1/:_id/edit/',
+    template: 'edit_$(basename "$1")',
     data: function() { return $(basename "$1").findOne(this.params._id); }
 });"
                 echo "${tpl_edit}" >> "lib/router.js"
@@ -1306,16 +1317,10 @@ Router.route('edit_$(basename "$1")', {
                 local tpl_show="
 Router.route('show_$(basename "$1")', {
     path: '/$1/:_id/',
+    template: 'show_$(basename "$1")',
     data: function() { return $(basename "$1").findOne(this.params._id); }
 });"
                 echo "${tpl_show}" >> "lib/router.js"
-                #--------------------------------------------------------------#
-                # new document
-                local tpl_new="
-Router.route('new_$(basename "$1")', {
-    path: '/$1/new/'
-});"
-                echo "${tpl_new}" >> "lib/router.js"
         fi
     fi
 }
