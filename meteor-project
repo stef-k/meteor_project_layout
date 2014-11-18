@@ -179,12 +179,27 @@ ROUTER="Router.configure({
 
 Router.onAfterAction(function() {
     var projectName='PROJECT_NAME_HERE';
-    if (Router.current().route.getName() !== \"index\"){
-        document.title = projectName + ' | ' +
-            Router.current().route.getName().replace(/_/g, ' ');
+    try {
+        if (Router.current().route.getName() !== \"index\"){
+            try {
+                document.title = projectName + ' | ' +
+                    Router.current().route.getName().replace(/_/g, ' ');
+            }
+            catch (e) {
+                // do nothing we probably trying to set title to a destroyed template
+            }
+        }
+        else {
+            try {
+                document.title = projectName;
+            }
+            catch (e) {
+                // do nothing we probably trying to set title to a destroyed template
+            }
+        }
     }
-    else {
-        document.title = projectName;
+    catch (e){
+        // do nothing we probably trying to set title to a server side route
     }
 });
 
