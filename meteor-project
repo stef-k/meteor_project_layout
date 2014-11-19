@@ -657,7 +657,7 @@ function create_collection
                 colored "The collection $1 allready exists!" red
                 return 1
             else
-                tpl="$(basename "$1") = new Meteor.Collection('$(basename "$1")');"
+                tpl="$(basename "$1") = new Mongo.Collection('$(basename "$1")');"
 
                 echo "${tpl}" > "collections/$(basename "$1").js"
 
