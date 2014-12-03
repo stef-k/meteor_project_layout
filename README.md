@@ -4,6 +4,15 @@ Tested on Ubuntu 14.04 64 bit with **bash** not **sh** version:
 
 `GNU bash, version 4.3.11(1)-release (x86_64-pc-linux-gnu)`
 
+### Live example
+
+[This live example](http://meteor-project.meteor.com/) has been generated with these two command lines:
+
+```shell
+$meteor-project project blog
+$meteor-project scaffold user name:string registered:date isAdmin:boolean
+```
+
 ### Features
 
 * Generates a directory structure and the necessary files for new Meteor projects
