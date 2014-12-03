@@ -6,10 +6,11 @@ Tested on Ubuntu 14.04 64 bit with **bash** not **sh** version:
 
 ### Live example
 
-[This live example](http://meteor-project.meteor.com/) has been generated with these two command lines:
+[This live example](http://meteor-project.meteor.com/) has been generated with these three command lines in terminal:
 
 ```shell
 $meteor-project project blog
+$cd blog
 $meteor-project scaffold user name:string registered:date isAdmin:boolean
 ```
 
