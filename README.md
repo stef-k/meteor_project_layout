@@ -1,9 +1,18 @@
 ## A bash script to create directory structures for new Meteor projects
 
 Tested on Ubuntu 14.04 64 bit with **bash** not **sh** version:
+
 `GNU bash, version 4.3.11(1)-release (x86_64-pc-linux-gnu)`
 
-### Usage - 'installation':
+### Features
+
+* Generates a directory structure and the necessary files for new Meteor projects
+* Installs (configurable) packages at project creation
+* Can create new Views (view_name.html, view_name.js, and an entry in router.js)
+* Scaffolds CRUD views 
+* Generates links menu for the navigation bar
+
+### Usage - Setup:
 
 1. Place the script in your $PATH or source it so you can call it from terminal
 2. Make it executable with `chmod +x meteor-project`
