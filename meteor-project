@@ -846,7 +846,7 @@ function scaffold_template_index
     # close table values
     tpl_mid+="
                             <td>
-                                <a class=\"btn btn-primary btn-xs\" \
+                                <a class=\"btn btn-default btn-xs\" \
 href=\"{{pathFor 'show_$(basename "$1")'}}\"  id=\"show\">Show </a>
                                 <a class=\"btn btn-primary btn-xs\" \
 href=\"{{pathFor 'edit_$(basename "$1")'}}\"  id=\"edit\"> Edit</a>
