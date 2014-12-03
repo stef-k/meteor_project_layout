@@ -801,7 +801,7 @@ function scaffold_template_index
                         <tr>"
 
     local tpl_end="
-                </tbody>
+                    </tbody>
                </table>
             </div>
             <a class=\"btn btn-success btn-xs\" href=\"{{pathFor 'new_$(basename "$1")'}}\">New $(basename "$1")</a>
@@ -812,15 +812,27 @@ function scaffold_template_index
     local tpl_mid=""
     for col in ${field_names[*]}; do
         tpl_mid+="
-                    <th>${col}</th>"
+                            <th>${col}</th>"
     done
+    # filter input field (goes above edit, delete buttons)
+    tpl_mid+="
+                            <th>
+                                <form class=\"form-inline\">
+                                        <div class=\"form-group\">
+                                            <label for=\"input_title\">Filter: </label>
+                                            <input type=\"text\" class=\"form-control\"
+                                                   placeholder=\"filter text\"
+                                                   id=\"filter_field\">
+                                        </div>
+                                </form>
+                            </th>"
     # close the headers
     tpl_mid+="
-               </tr>"
+                        </tr>"
     tpl_mid+="
-           </thead>"
+                    </thead>"
     tpl_mid+="
-           <tbody>"
+                    <tbody>"
 
     # show document values and show, edit, delete links
     tpl_mid+="
@@ -1109,6 +1121,23 @@ Template.$(basename "$1").events ({
     // delete the selected object
     'click #delete': function(evt, tpl) {
         Meteor.call('delete_$(basename "$1")', this._id);
+    },
+
+    // filter function
+    'keyup #filter_field': function (evt, tpl) {
+        \$(\"td\").filter(function () {
+            var word = tpl.find('#filter_field').value;
+            if (word !== '') {
+                \$('.table-responsive tbody>tr').hide();
+                \$('.table-responsive td').filter(function () {
+                    return \$(this).text().toLowerCase().indexOf(word.toLowerCase()) > -1
+                }).parent('tr').show();
+            }
+            else {
+                \$('.table-responsive tbody>tr').show();
+            }
+            return false;
+        })
     }
 
 });
