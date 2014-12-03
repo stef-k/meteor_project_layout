@@ -12,6 +12,7 @@ Tested on Ubuntu 14.04 64 bit with **bash** not **sh** version:
 $meteor-project project blog
 $cd blog
 $meteor-project scaffold user name:string registered:date isAdmin:boolean
+$meteor-project links
 ```
 
 ### Features
