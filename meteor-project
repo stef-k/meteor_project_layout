@@ -27,7 +27,7 @@
 # GNU bash, version 4.3.11(1)-release (x86_64-pc-linux-gnu)
 # the name of this script
 readonly script="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
-readonly version="0.6"
+readonly version="0.7"
 ## Variables, Files - Directories
 # project's name do not edit
 PROJECT_NAME=""
@@ -169,6 +169,15 @@ body > .container {
 
 code {
     font-size: 80%;
+}
+
+/* space for checkboxes in generated scaffold tables */
+.space-left {
+    margin-left:10px!important;
+}
+
+.space-right {
+    margin-right:10px!important;
 }"
 
 
@@ -819,6 +828,12 @@ function scaffold_template_index
                             <th>
                                 <form class=\"form-inline\">
                                         <div class=\"form-group\">
+                                            <input type=\"checkbox\" class=\"space-left space-right\"
+                                                id=\"checkAll\">
+                                            <a class=\"btn btn-danger btn-xs space-right\"
+                                                href=\"\" id=\"deleteAll\">Delete selected</a>
+                                        </div>
+                                        <div class=\"form-group\">
                                             <label for=\"input_title\">Filter: </label>
                                             <input type=\"text\" class=\"form-control\"
                                                    placeholder=\"filter text\"
@@ -837,7 +852,7 @@ function scaffold_template_index
     # show document values and show, edit, delete links
     tpl_mid+="
                     {{#each $(basename "$1")}}
-                        <tr>"
+                        <tr id=\"{{_id}}\">"
     for value in ${field_names[*]}; do
         tpl_mid+="
                             <td>{{${value}}}</td>"
@@ -846,6 +861,8 @@ function scaffold_template_index
     # close table values
     tpl_mid+="
                             <td>
+                                <input type=\"checkbox\"
+                                    class=\"space-left space-right checkthis\">
                                 <a class=\"btn btn-default btn-xs\" \
 href=\"{{pathFor 'show_$(basename "$1")'}}\"  id=\"show\">Show </a>
                                 <a class=\"btn btn-primary btn-xs\" \
@@ -1138,6 +1155,20 @@ Template.$(basename "$1").events ({
             }
             return false;
         })
+    },
+
+    'click #checkAll': function (evt, tpl) {
+        \$('.checkthis').prop('checked', evt.target.checked);
+    },
+
+    'click #deleteAll': function () {
+        // get the id of the checked rows
+        \$('input:checkbox:checked').filter(function(){
+            var selectedIds = \$(this).closest('tr').attr('id');
+            if (selectedIds !== undefined) {
+                Meteor.call('delete_selected_$(basename "$1")', selectedIds);
+            }
+        });
     }
 
 });
@@ -1276,6 +1307,7 @@ function scaffold_method
     scaffold_method_insert "$1"
     scaffold_method_delete "$1"
     scaffold_method_update "$1"
+    scaffold_method_delete_selected "$1"
 }
 #------------------------------------------------------------------------------#
 # creates a save method for a given collection name
@@ -1311,6 +1343,18 @@ function scaffold_method_delete
     local pattern="Meteor.methods"
     local tpl="\\    delete_$(basename "$1"): function($(basename "$1")Id) { \\
         $(basename "$1").remove($(basename "$1")Id); \\
+    },"
+
+    sed -i "/$pattern/a $tpl\ " "server/methods.js"
+    sed -i "/$pattern/a \ " "server/methods.js"
+}
+# creates delete selected method
+# params: an array of _ids
+function scaffold_method_delete_selected
+{
+    local pattern="Meteor.methods"
+    local tpl="\\    delete_selected_$(basename "$1"): function(selectedIds) { \\
+        $(basename "$1").remove(selectedIds); \\
     },"
 
     sed -i "/$pattern/a $tpl\ " "server/methods.js"
