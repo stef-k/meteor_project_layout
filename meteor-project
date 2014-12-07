@@ -630,6 +630,7 @@ upstream $(basename "$1") {
 server {
     listen 0.0.0.0:80;
     # you must add the domain suffix ec. .com .net, etc
+    # access from both http://$(basename "$1") and http://www.$(basename "$1")
     server_name $(basename "$1") www.$(basename "$1");
 
     # Access and Error log location
@@ -652,14 +653,14 @@ server {
     }
 }"
 
-    echo $"tpl" > $(basename "$1")
+    echo "${tpl}" > $(basename "$1")
 }
 #------------------------------------------------------------------------------#
 # creates an upstart configuration file for the current project
 # params project's name
 function create_upstart_config
 {
-    tpl="description \"Upstart for $(basename "$1")\"
+    tpl="description \"Upstart job for $(basename "$1")\"
 
 # Upstart configuration for $(basename "$1") Meteor project, based on forever CLI
 # tool, see https://github.com/nodejitsu/forever
@@ -716,7 +717,7 @@ script
   exec forever start -a -l $(basename "$1")_forever.log -o $(basename "$1")_out.log -e $(basename "$1")_err.log main.js
 end script
 
-# Clean up jobs before stoping
+# Clean up jobs before shutting down
 pre-stop script
   # Shell trick to re-direct this script's STDOUT/STDERR
   exec 2>> $(basename "$1")_forever.log 1>> $(basename "$1")_forever.log
@@ -724,7 +725,7 @@ pre-stop script
 end script
 "
 
-    echo $"tpl" > $(basename "$1").conf
+    echo "${tpl}" > $(basename "$1").conf
 }
 #------------------------------------------------------------------------------#
 # check if this script is invoked from a valid Meteor project root
