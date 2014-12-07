@@ -342,6 +342,8 @@ function user_input
             create_server_files
 
             create_virtual_host "$2"
+
+            create_upstart_config "$2"
             # check for additional packages
             if [[ "${#}" -gt 3 ]]; then
                 for package in "${@:4}"; do
