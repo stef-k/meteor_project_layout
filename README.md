@@ -22,6 +22,8 @@ $meteor-project links
 * Can create new Views (view_name.html, view_name.js, and an entry in router.js)
 * Scaffolds CRUD views 
 * Generates links menu for the navigation bar
+* Nginx Virtual Host generation (during project creation)
+* Upostart job generation (during project creation)
 
 ### Usage - Setup:
 
