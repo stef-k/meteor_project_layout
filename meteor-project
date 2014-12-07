@@ -614,6 +614,7 @@ function create_virtual_host
 {
     tpl="# Nginx Virtual Host configuration for $(basename "$1") Meteor project
 # Put this configuration in /etc/nginx/sites-available directory
+# error and access logs are loged in /var/log/nginx directory
 
 # Note: if you want to run multiple meteor apps on the same server,
 # make sure you define a separate port for each.
@@ -628,6 +629,8 @@ server {
     listen 0.0.0.0:80;
     # you must add the domain suffix ec. .com .net, etc
     server_name $(basename "$1") www.$(basename "$1");
+
+    # Access and Error log location
     access_log /var/log/nginx/$(basename "$1")_access.log;
     error_log /var/log/nginx/$(basename "$1")_error.log;
 
@@ -647,7 +650,79 @@ server {
     }
 }"
 
-    return echo $"tpl" > $(basename "$1")
+    echo $"tpl" > $(basename "$1")
+}
+#------------------------------------------------------------------------------#
+# creates an upstart configuration file for the current project
+# params project's name
+function create_upstart_config
+{
+    tpl="description \"Upstart for $(basename "$1")\"
+
+# Upstart configuration for $(basename "$1") Meteor project, based on forever CLI
+# tool, see https://github.com/nodejitsu/forever
+
+# Put this file in /etc/init as $(basename "$1").conf e.g: /etc/init/$(basename "$1").conf
+# check project name - server ports to match with Nginx and MongoDB
+
+# During system startup, we want the app to start after system's filesystem
+# and network are up and functional
+# do not use start on startup see http://serverfault.com/a/279966/168560
+start on filesystem and started networking
+
+# stop on system shutdown
+stop on shutdown
+
+expect fork
+#------------------------------------------------------------------------------#
+# Environment variables
+# CHANGE THE PATH TO WHERE YOU WILL PUT THE APP FOLDER
+chdir /some/path/$(basename "$1")
+env PWD=\"/some/path/$(basename "$1")\"
+env HOME=\"/some/path/$(basename "$1")\"
+
+env PATH=\"/opt/local/bin:/opt/local/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"
+env NODE_PATH=\"/usr/lib/nodejs:/usr/lib/node_modules:/usr/share/javascript\"
+# set ROOT_URL env variable
+#------------------------------------------------------------------------------#
+# Domain - IP - Ports
+# CHANGE THE DOMAIN SUFFIX
+env ROOT_URL=\"http://$(basename "$1").com\"
+
+# this allows Meteor to figure out correct IP address of visitors
+env HTTP_FORWARDED_COUNT=1
+env APP_PATH=$HOME
+
+# leave as 127.0.0.1 for security
+env BIND_IP=127.0.0.1
+
+# the port nginx is proxying requests to
+# CHANGE THE PORT TO MATCH WITH NGINX VIRTUAL HOST CONFIG
+env PORT=51999
+#------------------------------------------------------------------------------#
+# Database related
+# MongoDB connection string using app_name, user name and password as defined
+# CHANGE THE USER AND THE PASSWORD AND PORT IF NEEDED FOR MONGODB
+# NOTE A MONGODB DATABASE MUST BE ALREADY CREATED
+env MONGO_URL=mongodb://user:password@127.0.0.1:27017/$(basename "$1")
+#------------------------------------------------------------------------------#
+# Execute script
+script
+  # Shell trick to re-direct this script's STDOUT/STDERR
+  exec 2>> $(basename "$1")_forever.log 1>> $(basename "$1")_forever.log
+  # You forgot the 'start' command. Without it, it doesn't fork.
+  exec forever start -a -l $(basename "$1")_forever.log -o $(basename "$1")_out.log -e $(basename "$1")_err.log main.js
+end script
+
+# Clean up jobs before stoping
+pre-stop script
+  # Shell trick to re-direct this script's STDOUT/STDERR
+  exec 2>> $(basename "$1")_forever.log 1>> $(basename "$1")_forever.log
+  exec forever stop main.js
+end script
+"
+
+    echo $"tpl" > $(basename "$1").conf
 }
 #------------------------------------------------------------------------------#
 # check if this script is invoked from a valid Meteor project root
