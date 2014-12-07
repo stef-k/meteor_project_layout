@@ -621,6 +621,8 @@ function create_virtual_host
 # Note: if you want to run multiple meteor apps on the same server,
 # make sure you define a separate port for each.
 
+# for more info check http://wiki.iccode.net/meteor/ubuntu_deployment
+
 # Upstreams
 upstream $(basename "$1") {
     server 127.0.0.1:51999;
@@ -667,6 +669,9 @@ function create_upstart_config
 
 # Put this file in /etc/init as $(basename "$1").conf e.g: /etc/init/$(basename "$1").conf
 # check project name - server ports to match with Nginx and MongoDB
+
+# for more info check http://wiki.iccode.net/meteor/ubuntu_deployment
+
 
 # During system startup, we want the app to start after system's filesystem
 # and network are up and functional
