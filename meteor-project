@@ -1165,12 +1165,10 @@ function scaffold_form
         elif [[ ${field_types["${i}"]} == "select" ]]; then
             tpl_mid+="
             <select class=\"form-control\" id=\"input_${field_names["${i}"]}\">"
-            for j in {1..5}; do
-                tpl_mid+="
+            tpl_mid+="
                 <option selected=\"{{selected_${field_names["${i}"]}}}\">
-                    ${field_names["${i}"]} ${j}
+                    {{${field_names["${i}"]}}}
                 </option>"
-            done
             tpl_mid+="
             </select>"
         fi
