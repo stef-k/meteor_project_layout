@@ -946,6 +946,19 @@ function scaffold_template_index
     # display the main content in a table where
     # the number of columns = length of field_names array
     local tpl_mid=""
+    tpl_mid+="
+                            <th colspan=\"50\">
+                                <form class=\"form-inline\">
+                                        <div class=\"form-group\">
+                                            <label for=\"input_title\">Filter: </label>
+                                            <input type=\"text\" class=\"form-control\"
+                                                   placeholder=\"filter text\"
+                                                   id=\"filter_field\">
+                                        </div>
+                                </form>
+                            </th>
+                        </tr>
+                        <tr>"
     for col in ${field_names[*]}; do
         tpl_mid+="
                             <th>${col}</th>"
@@ -959,12 +972,6 @@ function scaffold_template_index
                                                 id=\"checkAll\">
                                             <a class=\"btn btn-danger btn-xs space-right\"
                                                 href=\"\" id=\"deleteAll\">Delete selected</a>
-                                        </div>
-                                        <div class=\"form-group\">
-                                            <label for=\"input_title\">Filter: </label>
-                                            <input type=\"text\" class=\"form-control\"
-                                                   placeholder=\"filter text\"
-                                                   id=\"filter_field\">
                                         </div>
                                 </form>
                             </th>"
