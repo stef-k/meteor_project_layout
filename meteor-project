@@ -963,9 +963,9 @@ function scaffold_template_index
         tpl_mid+="
                             <th>${col}</th>"
     done
-    # filter input field (goes above edit, delete buttons)
+    # filter input field (goes above table header and edit, delete buttons)
     tpl_mid+="
-                            <th>
+                            <th colspan=\"4\">
                                 <form class=\"form-inline\">
                                         <div class=\"form-group\">
                                             <input type=\"checkbox\" class=\"space-left space-right\"
@@ -997,10 +997,16 @@ function scaffold_template_index
                             <td>
                                 <input type=\"checkbox\"
                                     class=\"space-left space-right checkthis\">
+                            </td>
+                            <td>
                                 <a class=\"btn btn-default btn-xs\" \
 href=\"{{pathFor 'show_$(basename "$1")'}}\"  id=\"show\">Show </a>
+                            </td>
+                            <td>
                                 <a class=\"btn btn-primary btn-xs\" \
 href=\"{{pathFor 'edit_$(basename "$1")'}}\"  id=\"edit\"> Edit</a>
+                            </td>
+                            <td>
                                 <a class=\"btn btn-danger btn-xs\" \
 href=\"\" id=\"delete\">Delete</a>
                             </td>
