@@ -655,7 +655,7 @@ server {
     }
 }"
 
-    echo "${tpl}" > $(basename "$1")
+    echo "${tpl}" > $(basename "$1").nginx
 }
 #------------------------------------------------------------------------------#
 # creates an upstart configuration file for the current project
