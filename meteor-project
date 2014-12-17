@@ -1111,8 +1111,7 @@ function scaffold_form
         elif [[ ${field_types["${i}"]} == "text" ]]; then
             tpl_mid+="
             <textarea class=\"form-control\" rows=\"3\"
-                id=\"input_${field_names["${i}"]}\">{{${field_names["${i}"]}}}
-            </textarea>"
+                id=\"input_${field_names["${i}"]}\">{{${field_names["${i}"]}}}</textarea>"
 
         elif [[ ${field_types["${i}"]} == "number" ]]; then
             tpl_mid+="
